@@ -34,3 +34,21 @@ It can do a lot of cool things, some of them being:
 - Install PyAudio from wheel file by following instructions given [here](https://stackoverflow.com/questions/52283840/i-cant-install-pyaudio-on-windows-how-to-solve-error-microsoft-visual-c-14)
 - Run the python script named as ```jarvis.py``` which is in Jarvis Directory.
 - Enjoy !!!!
+
+## 📌Contributing
+Pull requests are welcome. For major changes, please open an issue first to discuss what you would like to change.
+
+## 📌Author
+
+👤 **Kishan Kumar Rai**
+
+- Twitter: [@kishan_rajput23](https://twitter.com/kishan_rajput23)
+- Github: [@kishanrajput23](https://github.com/kishanrajput23)
+- LinkedIn: [@kishan-kumar-rai](https://linkedin.com/in/kishan-kumar-rai-23112000)
+
+## 📌Show your support
+
+Please ⭐️ this repository if this project helped you!
+
+## 📌License
+This project is [MIT](https://choosealicense.com/licenses/mit/) licensed.
