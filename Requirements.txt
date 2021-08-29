@@ -1,0 +1,9 @@
+1. Pyttsx3
+
+2. Speech Rrecognition
+
+3. Wikipedia
+
+4. Webbrowser
+
+5. Pyautogui
