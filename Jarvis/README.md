@@ -42,23 +42,41 @@
 
 # 📌Features 
 
-1. Greet the user
+### 👉 1. Greet the user
 
-2. Tell current time & date
+<img src="https://github.com/kishanrajput23/Jarvis-Desktop-Voice-Assistant/blob/main/Images/Picture1.png" alt="">
 
-3. Search something on Wikipedia
+### 👉 2. Tell current time & date
 
-4. Open any Website
+<img src="https://github.com/kishanrajput23/Jarvis-Desktop-Voice-Assistant/blob/main/Images/Picture2.png" alt="">
 
-5. Plays Music
+### 👉 3. Search something on Wikipedia
 
-6. Can search anything on Google
+<img src="https://github.com/kishanrajput23/Jarvis-Desktop-Voice-Assistant/blob/main/Images/Picture3.png" alt="">
 
-7. Take important note in text file
+### 👉 4. Open any Website
 
-8. Take Screenshots and save it with custom filename
+<img src="https://github.com/kishanrajput23/Jarvis-Desktop-Voice-Assistant/blob/main/Images/Picture4.png" width="480"/> <img src="https://github.com/kishanrajput23/Jarvis-Desktop-Voice-Assistant/blob/main/Images/Picture5.png" width="480"/>
 
-9. Finally make Assistant offline
+### 👉 5. Plays Music
+
+<img src="https://github.com/kishanrajput23/Jarvis-Desktop-Voice-Assistant/blob/main/Images/Picture6.png" alt="">
+
+### 👉 6. Can search anything on Google
+
+<img src="https://github.com/kishanrajput23/Jarvis-Desktop-Voice-Assistant/blob/main/Images/Picture7.png" width="480"/> <img src="https://github.com/kishanrajput23/Jarvis-Desktop-Voice-Assistant/blob/main/Images/Picture8.png" width="480"/> 
+
+### 👉 7. Take important note in text file
+
+<img src="https://github.com/kishanrajput23/Jarvis-Desktop-Voice-Assistant/blob/main/Images/Picture9.png" alt="">
+
+### 👉 8. Take Screenshots and save it with custom filename
+
+<img src="https://github.com/kishanrajput23/Jarvis-Desktop-Voice-Assistant/blob/main/Images/Picture10.png" alt="">
+
+### 👉 9. Finally make Assistant offline
+
+<img src="https://github.com/kishanrajput23/Jarvis-Desktop-Voice-Assistant/blob/main/Images/Picture11.png" alt="">
 
 # 📌WHY TO USE JARVIS?
 
@@ -69,10 +87,6 @@
 3. It accepts inputs even through voice or keyboard.
 
 4. It automates tedious tasks like deployment, unit testing through a single command.
-
-5. Can work with variety of commands.
-
-6. Custom commands
 
 # 📌Advantages / Disadvantages 
 
