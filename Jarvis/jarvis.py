@@ -52,7 +52,8 @@ def wishme():
 
 def screenshot():
     img = pyautogui.screenshot()
-    img.save("C:\\Users\\KISHAN\\OneDrive\\Documents\\Jarvis 2.0\\ss3.png")
+    user_directory = os.path.expanduser("~\\Pictures\\ss.png")
+    img.save(user_directory)
 
 
 def takecommand():
