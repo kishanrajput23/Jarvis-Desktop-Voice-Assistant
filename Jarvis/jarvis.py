@@ -53,7 +53,7 @@ def wishme():
 def screenshot():
     img = pyautogui.screenshot()
     img_path = os.path.expanduser("~\\Pictures\\ss.png")
-    img.save(user_directory)
+    img.save(img_path)
 
 
 def takecommand():
