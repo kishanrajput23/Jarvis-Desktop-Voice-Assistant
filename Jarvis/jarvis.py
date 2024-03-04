@@ -52,7 +52,7 @@ def wishme():
 
 def screenshot():
     img = pyautogui.screenshot()
-    user_directory = os.path.expanduser("~\\Pictures\\ss.png")
+    img_path = os.path.expanduser("~\\Pictures\\ss.png")
     img.save(user_directory)
 
 
@@ -121,7 +121,7 @@ if __name__ == "__main__":
             wb.open("stackoverflow.com")
 
         elif "play music" in query:
-            song_dir = "C:\\Users\\KISHAN\\Music"
+            song_dir = os.path.expanduser("~\\Music")
             songs = os.listdir(song_dir)
             print(songs)
             x = len(songs)
