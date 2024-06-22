@@ -1,0 +1,4 @@
+pyttsx3~=2.90
+wikipedia~=1.4.0
+PyAutoGUI~=0.9.54
+SpeechRecognition~=3.10.4
