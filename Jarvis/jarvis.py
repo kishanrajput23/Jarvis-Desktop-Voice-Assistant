@@ -10,15 +10,18 @@ import pyautogui
 
 engine = pyttsx3.init()
 
+
 def speak(audio):
     engine.say(audio)
     engine.runAndWait()
+
 
 def time():
     Time = datetime.datetime.now().strftime("%I:%M:%S")
     speak("the current time is")
     speak(Time)
     print("The current time is ", Time)
+
 
 def date():
     day = int(datetime.datetime.now().day)
@@ -30,18 +33,19 @@ def date():
     speak(year)
     print("The current date is " + str(day) + "/" + str(month) + "/" + str(year))
 
+
 def wishme():
     print("Welcome back sir!!")
     speak("Welcome back sir!!")
-    
+
     hour = datetime.datetime.now().hour
-    if hour >= 4 and hour < 12:
+    if 4 <= hour < 12:
         speak("Good Morning Sir!!")
         print("Good Morning Sir!!")
-    elif hour >= 12 and hour < 16:
+    elif 12 <= hour < 16:
         speak("Good Afternoon Sir!!")
         print("Good Afternoon Sir!!")
-    elif hour >= 16 and hour < 24:
+    elif 16 <= hour < 24:
         speak("Good Evening Sir!!")
         print("Good Evening Sir!!")
     else:
@@ -49,6 +53,7 @@ def wishme():
 
     speak("Jarvis at your service sir, please tell me how may I help you.")
     print("Jarvis at your service sir, please tell me how may I help you.")
+
 
 def screenshot():
     img = pyautogui.screenshot()
@@ -74,6 +79,7 @@ def takecommand():
         return "Try Again"
 
     return query
+
 
 if __name__ == "__main__":
     wishme()
@@ -104,19 +110,19 @@ if __name__ == "__main__":
         elif "wikipedia" in query:
             try:
                 speak("Ok wait sir, I'm searching...")
-                query = query.replace("wikipedia","")
+                query = query.replace("wikipedia", "")
                 result = wikipedia.summary(query, sentences=2)
                 print(result)
                 speak(result)
             except:
                 speak("Can't find this page sir, please ask something else")
-        
+
         elif "open youtube" in query:
-            wb.open("youtube.com") 
+            wb.open("youtube.com")
 
         elif "open google" in query:
-            wb.open("google.com") 
-   
+            wb.open("google.com")
+
         elif "open stack overflow" in query:
             wb.open("stackoverflow.com")
 
@@ -125,7 +131,7 @@ if __name__ == "__main__":
             songs = os.listdir(song_dir)
             print(songs)
             x = len(songs)
-            y = random.randint(0,x)
+            y = random.randint(0, x)
             os.startfile(os.path.join(song_dir, songs[y]))
 
         elif "open chrome" in query:
@@ -144,8 +150,8 @@ if __name__ == "__main__":
             except Exception as e:
                 speak("Can't open now, please try again later.")
                 print("Can't open now, please try again later.")
-            
-        
+
+
         elif "remember that" in query:
             speak("What should I remember")
             data = takecommand()
@@ -167,5 +173,3 @@ if __name__ == "__main__":
 
         elif "offline" in query:
             quit()
-
-
