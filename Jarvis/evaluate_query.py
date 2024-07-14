@@ -9,13 +9,16 @@ import os
 import random
 import pyautogui
 
-#import javis actions
+#import jarvis actions
 from jarvis_actions import speak
 from jarvis_actions import time
 from jarvis_actions import date
 from jarvis_actions import wishme
 from jarvis_actions import screenshot
 from jarvis_actions import takecommand
+
+#import newsreader
+from jarvis_news import read_headlines
 
 
 #####################-functions-#####################
@@ -137,6 +140,10 @@ def evaluate_query(query):
     elif "screenshot" in query:
         screenshot()
         speak("I've taken screenshot, please check it")
+
+    #read headlines
+    elif "headlines" or "news" in query:
+        read_headlines()
 
     #end the program
     elif "offline" in query:

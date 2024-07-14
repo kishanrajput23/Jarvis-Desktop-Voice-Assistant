@@ -5,7 +5,7 @@ import feedparser
 from jarvis_actions import speak
 
 
-def find_news():
+def read_headlines():
     #parse news feed
     news_feed = feedparser.parse("https://feeds.bbci.co.uk/news/rss.xml?edition=uk")
     entries = news_feed.entries
@@ -16,7 +16,6 @@ def find_news():
     while count < 10:
         articles.append(entries[count])
         speak(articles[count].title)
-        print(articles[count].title)
+        print(articles[count].title,":")
+        print(articles[count].link)
         count += 1
-
-find_news()
