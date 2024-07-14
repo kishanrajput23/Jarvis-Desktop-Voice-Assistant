@@ -31,6 +31,7 @@ if __name__ == "__main__":
     app = App()
     app.mainloop()
     
+    """
     #greet user
     wishme()
 
@@ -38,3 +39,4 @@ if __name__ == "__main__":
         #acquire user input
         query = takecommand().lower()
         evaluate_query(query)
+        """

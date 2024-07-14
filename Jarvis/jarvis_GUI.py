@@ -42,3 +42,7 @@ class App(ctk.CTk):
         self.mode_menu_label.place(x=23, y=115)
         self.mode_menu = ctk.CTkOptionMenu(self.sidebar_frame, values=['Dark', 'Light'], command=change_appearence_mode)
         self.mode_menu.place(x=10, y=150)
+
+        #add main button
+        self.main_button = ctk.CTkButton(self.main_frame, text='Jarvis', height=75, width=100)
+        self.main_button.place(x=85, y=62.5)
