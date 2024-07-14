@@ -1,4 +1,8 @@
+#import dependencies
 import customtkinter as ctk
+
+#import gui commands
+from GUI_commands import change_appearence_mode
 
 
 #set default settings - dark theme with blue colour theme
@@ -36,5 +40,5 @@ class App(ctk.CTk):
         #add light/dark mode dropdown menu with label
         self.mode_menu_label = ctk.CTkLabel(self.sidebar_frame, text='Appearence Mode')
         self.mode_menu_label.place(x=23, y=115)
-        self.mode_menu = ctk.CTkOptionMenu(self.sidebar_frame, values=['Dark', 'Light'])
+        self.mode_menu = ctk.CTkOptionMenu(self.sidebar_frame, values=['Dark', 'Light'], command=change_appearence_mode)
         self.mode_menu.place(x=10, y=150)

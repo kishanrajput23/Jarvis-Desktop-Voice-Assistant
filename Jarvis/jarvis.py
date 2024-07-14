@@ -28,7 +28,6 @@ from jarvis_GUI import App
 #start program
 if __name__ == "__main__":
     #launch gui window
-    #create_GUI()
     app = App()
     app.mainloop()
     
