@@ -3,6 +3,7 @@ import customtkinter as ctk
 
 #import gui commands
 from GUI_commands import change_appearence_mode
+from GUI_commands import jarvis_button_click
 
 
 #set default settings - dark theme with blue colour theme
@@ -44,5 +45,5 @@ class App(ctk.CTk):
         self.mode_menu.place(x=10, y=150)
 
         #add main button
-        self.main_button = ctk.CTkButton(self.main_frame, text='Jarvis', height=75, width=100)
+        self.main_button = ctk.CTkButton(self.main_frame, text='Jarvis', height=75, width=100, command=jarvis_button_click)
         self.main_button.place(x=85, y=62.5)
