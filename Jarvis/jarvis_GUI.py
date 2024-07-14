@@ -35,7 +35,7 @@ class App(ctk.CTk):
         #add voice gender dropdown menu with label
         self.gender_menu_label = ctk.CTkLabel(self.sidebar_frame, text='Gender')
         self.gender_menu_label.place(x=55, y=40)
-        self.gender_menu = ctk.CTkOptionMenu(self.sidebar_frame, values=['Male', 'Female'])
+        self.gender_menu = ctk.CTkOptionMenu(self.sidebar_frame, values=['Female', 'Male'])
         self.gender_menu.place(x=10, y=70)
 
         #add light/dark mode dropdown menu with label

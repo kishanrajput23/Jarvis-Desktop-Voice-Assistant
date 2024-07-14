@@ -14,7 +14,7 @@ import pyautogui
 engine = pyttsx3.init()
 
 #######################functions########################
-#text to speach
+#text to speach 
 def speak(audio):
     engine.say(audio)
     engine.runAndWait()
