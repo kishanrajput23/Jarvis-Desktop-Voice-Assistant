@@ -20,9 +20,18 @@ from jarvis_actions import takecommand
 #import evaluate query
 from evaluate_query import evaluate_query
 
+#import GUI
+#from jarvis_GUI import create_GUI
+from jarvis_GUI import App
+
 
 #start program
 if __name__ == "__main__":
+    #launch gui window
+    #create_GUI()
+    app = App()
+    app.mainloop()
+    
     #greet user
     wishme()
 

@@ -5,34 +5,36 @@ import customtkinter as ctk
 ctk.set_appearance_mode("dark")
 ctk.set_default_color_theme("blue")
 
-#create window
-app = ctk.CTk()
-app.geometry("500x200")
-app.title("Jarvis")
+#create app class
+class App(ctk.CTk):
+    def __init__(self):
+        super().__init__()
 
-#create sidebar frame to hold settings
-sidebar_frame = ctk.CTkFrame(app, width=160, corner_radius=0)
-sidebar_frame.grid(row=0, column=0, sticky='nsew')
+        #create window
+        #app = ctk.CTk()
+        self.geometry("500x200")
+        self.title("Jarvis")
 
-#create main frame to hold jarvis button
-main_frame = ctk.CTkFrame(app, width=270)
-main_frame.grid(row=0, column=1, padx=37)
+        #create sidebar frame to hold settings
+        self.sidebar_frame = ctk.CTkFrame(self, width=160, corner_radius=0)
+        self.sidebar_frame.grid(row=0, column=0, sticky='nsew')
 
-#add settings label in sidebar
-settings_label = ctk.CTkLabel(sidebar_frame, text="Settings", font= ctk.CTkFont(size=18))
-settings_label.place(x=43, y=10)
+        #create main frame to hold jarvis button
+        self.main_frame = ctk.CTkFrame(self, width=270)
+        self.main_frame.grid(row=0, column=1, padx=37)
 
-#add voice gender dropdown menu with label
-gender_menu_label = ctk.CTkLabel(sidebar_frame, text='Gender')
-gender_menu_label.place(x=55, y=40)
-gender_menu = ctk.CTkOptionMenu(sidebar_frame, values=['Male', 'Female'])
-gender_menu.place(x=10, y=70)
+        #add settings label in sidebar
+        self.settings_label = ctk.CTkLabel(self.sidebar_frame, text="Settings", font= ctk.CTkFont(size=18))
+        self.settings_label.place(x=43, y=10)
 
-#add light/dark mode dropdown menu with label
-mode_menu_label = ctk.CTkLabel(sidebar_frame, text='Appearence Mode')
-mode_menu_label.place(x=23, y=115)
-mode_menu = ctk.CTkOptionMenu(sidebar_frame, values=['Dark', 'Light'])
-mode_menu.place(x=10, y=150)
+        #add voice gender dropdown menu with label
+        self.gender_menu_label = ctk.CTkLabel(self.sidebar_frame, text='Gender')
+        self.gender_menu_label.place(x=55, y=40)
+        self.gender_menu = ctk.CTkOptionMenu(self.sidebar_frame, values=['Male', 'Female'])
+        self.gender_menu.place(x=10, y=70)
 
-#run interface
-app.mainloop()
+        #add light/dark mode dropdown menu with label
+        self.mode_menu_label = ctk.CTkLabel(self.sidebar_frame, text='Appearence Mode')
+        self.mode_menu_label.place(x=23, y=115)
+        self.mode_menu = ctk.CTkOptionMenu(self.sidebar_frame, values=['Dark', 'Light'])
+        self.mode_menu.place(x=10, y=150)
