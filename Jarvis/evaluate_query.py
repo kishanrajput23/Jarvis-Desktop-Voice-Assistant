@@ -89,8 +89,14 @@ def evaluate_query(query):
     #open the chrome app
     elif "open chrome" in query:
         #FileNotFoundError causes termination - that is not where chrome is stored on my computer
-        chromePath = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
-        os.startfile(chromePath)
+        try:
+            chromePath = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
+            os.startfile(chromePath)
+        
+        #FileNotFoundError - cannot find chrome in specified location
+        except FileNotFoundError:
+            speak("Could not find Chrome on your computer")
+            print("Could not find Chrome on your computer")
 
     #open a chrome tab with a google search
     elif "search on chrome" in query:
@@ -102,7 +108,11 @@ def evaluate_query(query):
             wb.get(chromePath).open_new_tab(search)
             print(search)
 
-        #FileNotFoundError causes termination
+        ##FileNotFoundError - cannot find chrome in specified location
+        except FileNotFoundError:
+            speak("Could not find Chrome on your computer")
+            print("Could not find Chrome on your computer")
+
         except Exception as e:
             speak("Can't open now, please try again later.")
             print("Can't open now, please try again later.")
