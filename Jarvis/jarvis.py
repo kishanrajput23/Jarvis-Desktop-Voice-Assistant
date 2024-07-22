@@ -11,34 +11,34 @@ import pyautogui
 engine = pyttsx3.init()
 
 
-def speak(audio):
+def speak(audio) -> None:
     engine.say(audio)
     engine.runAndWait()
 
 
-def time():
+def time() -> None:
     Time = datetime.datetime.now().strftime("%I:%M:%S")
     speak("the current time is")
     speak(Time)
     print("The current time is ", Time)
 
 
-def date():
-    day = int(datetime.datetime.now().day)
-    month = int(datetime.datetime.now().month)
-    year = int(datetime.datetime.now().year)
+def date() -> None:
+    day: int = datetime.datetime.now().day
+    month: int = datetime.datetime.now().month
+    year: int = datetime.datetime.now().year
     speak("the current date is")
     speak(day)
     speak(month)
     speak(year)
-    print("The current date is " + str(day) + "/" + str(month) + "/" + str(year))
+    print(f"The current date is {day}/{month}/{year}")
 
 
-def wishme():
+def wishme() -> None:
     print("Welcome back sir!!")
     speak("Welcome back sir!!")
 
-    hour = datetime.datetime.now().hour
+    hour: int = datetime.datetime.now().hour
     if 4 <= hour < 12:
         speak("Good Morning Sir!!")
         print("Good Morning Sir!!")
@@ -55,7 +55,7 @@ def wishme():
     print("Jarvis at your service sir, please tell me how may I help you.")
 
 
-def screenshot():
+def screenshot() -> None:
     img = pyautogui.screenshot()
     img_path = os.path.expanduser("~\\Pictures\\ss.png")
     img.save(img_path)
