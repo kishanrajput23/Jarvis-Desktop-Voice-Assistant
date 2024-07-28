@@ -1,6 +1,8 @@
 import customtkinter as ctk
+import jarvis_GUI
 from jarvis_actions import speak
 from listen import listen
+#import jarvis
 
 
 #change between light mode and dark mode

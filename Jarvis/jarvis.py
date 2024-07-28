@@ -8,8 +8,8 @@ import jarvis_GUI
 #start program
 if __name__ == "__main__":
     #greet user
-    wishme()
+    #wishme()
 
-    #launch gui window
-    app = jarvis_GUI.App()
+    #instantiate and launch gui window
+    app = jarvis_GUI.App()    
     app.mainloop()
