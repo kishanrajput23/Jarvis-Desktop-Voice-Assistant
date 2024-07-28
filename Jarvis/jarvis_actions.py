@@ -10,12 +10,19 @@ import random
 import pyautogui
 
 
-#instantiate python text to speech engine - should choose male/female
+#instantiate python text to speech engine
 engine = pyttsx3.init()
 
 #######################functions########################
 #text to speach 
-def speak(audio):
+def speak(audio, gender):
+    #adjust engine based on provided gender
+    voices = engine.getProperty('voices') 
+    if gender == 'M':
+        engine.setProperty('voice', voices[0].id)
+    if gender == 'F':
+        engine.setProperty('voice', voices[1].id)
+
     engine.say(audio)
     engine.runAndWait()
 
@@ -23,7 +30,7 @@ def speak(audio):
 #read the time 
 def time():
     Time = datetime.datetime.now().strftime("%I:%M:%S")
-    speak("the current time is")
+    speak("the current time is", '')
     speak(Time)
     print("The current time is ", Time)
 
@@ -33,7 +40,7 @@ def date():
     day = int(datetime.datetime.now().day)
     month = int(datetime.datetime.now().month)
     year = int(datetime.datetime.now().year)
-    speak("the current date is")
+    speak("the current date is", '')
     speak(day)
     speak(month)
     speak(year)
@@ -43,22 +50,22 @@ def date():
 #greet the user
 def wishme():
     print("Welcome back sir!!")
-    speak("Welcome back sir!!")
+    speak("Welcome back sir!!", '')
 
     hour = datetime.datetime.now().hour
     if 4 <= hour < 12:
-        speak("Good Morning Sir!!")
+        speak("Good Morning Sir!!", '')
         print("Good Morning Sir!!")
     elif 12 <= hour < 16:
-        speak("Good Afternoon Sir!!")
+        speak("Good Afternoon Sir!!", '')
         print("Good Afternoon Sir!!")
     elif 16 <= hour < 24:
-        speak("Good Evening Sir!!")
+        speak("Good Evening Sir!!", '')
         print("Good Evening Sir!!")
     else:
-        speak("Good Night Sir, See You Tommorrow")
+        speak("Good Night Sir, See You Tommorrow", '')
 
-    speak("Jarvis at your service sir, please tell me how may I help you.")
+    speak("Jarvis at your service sir, please tell me how may I help you.", '')
     print("Jarvis at your service sir, please tell me how may I help you.")
 
 #take a screenshot
@@ -82,7 +89,7 @@ def takecommand():
 
     except Exception as e:
         print(e)
-        speak("Please say that again")
+        speak("Please say that again", '')
         return "Try Again"
 
     return query

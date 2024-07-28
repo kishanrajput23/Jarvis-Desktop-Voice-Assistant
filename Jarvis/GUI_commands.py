@@ -10,8 +10,15 @@ def change_appearence_mode(new_mode):
     ctk.set_appearance_mode(new_mode)
 
 
-#listen for user input
-def jarvis_button_click():
+#listen for user input (male)
+def jarvis_button_click_male():
     print("Listening")
-    speak("Listening")
-    listen()
+    speak("Listening", 'M')
+    listen('M')
+
+
+#listen for user input (female)
+def jarvis_button_click_female():
+    print("Listening")
+    speak("Listening", 'F')
+    listen('F')

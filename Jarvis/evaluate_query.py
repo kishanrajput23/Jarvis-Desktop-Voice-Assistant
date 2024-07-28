@@ -22,7 +22,8 @@ from jarvis_news import read_headlines
 
 
 #####################-functions-#####################
-def evaluate_query(query):
+def evaluate_query(query, gender):
+    print(query)
     #if the user mentions the time, report what time it is
     if "time" in query:
         time()
@@ -33,29 +34,29 @@ def evaluate_query(query):
 
     #if the user asks for information about the personal assistant, it is provided
     elif "who are you" in query:
-        speak("I'm JARVIS created by Mr. Kishan and I'm a desktop voice assistant.")
+        speak("I'm JARVIS created by Mr. Kishan and I'm a desktop voice assistant.", gender)
         print("I'm JARVIS created by Mr. Kishan and I'm a desktop voice assistant.")
 
     #if the user asks the assistant how they are, an appropriate response is given
     elif "how are you" in query:
-        speak("I'm fine sir, What about you?")
+        speak("I'm fine sir, What about you?", gender)
         print("I'm fine sir, What about you?")
 
     #if the user says that they are fine, then an appropriate response is given
     elif "fine" in query:
-        speak("Glad to hear that sir!!")
+        speak("Glad to hear that sir!!", gender)
         print("Glad to hear that sir!!")
 
     #if the user says that they are good, an appropriate response is given
     elif "good" in query:
-        speak("Glad to hear that sir!!")
+        speak("Glad to hear that sir!!", gender)
         print("Glad to hear that sir!!")
 
     #if the user wishes to recieve a wikipedia summary
     elif "wikipedia" in query:
         try:
             #feedback to let the user know that the assistant is working on it
-            speak("Ok wait sir, I'm searching...")
+            speak("Ok wait sir, I'm searching...", gender)
 
             #remove the word wikipedia from the query and produce a result
             query = query.replace("wikipedia", "")
@@ -63,10 +64,10 @@ def evaluate_query(query):
 
             #output result
             print(result)
-            speak(result)
+            speak(result, gender)
         except:
             #if unsuccessful, inform the user
-            speak("Can't find this page sir, please ask something else")
+            speak("Can't find this page sir, please ask something else", gender)
 
     #open youtube.com in default browser
     elif "open youtube" in query:
@@ -98,7 +99,7 @@ def evaluate_query(query):
         
         #FileNotFoundError - cannot find chrome in specified location
         except FileNotFoundError:
-            speak("Could not find Chrome on your computer")
+            speak("Could not find Chrome on your computer", gender)
             print("Could not find Chrome on your computer")
 
     #open a chrome tab with a google search
@@ -113,18 +114,18 @@ def evaluate_query(query):
 
         ##FileNotFoundError - cannot find chrome in specified location
         except FileNotFoundError:
-            speak("Could not find Chrome on your computer")
+            speak("Could not find Chrome on your computer", gender)
             print("Could not find Chrome on your computer")
 
         except Exception as e:
-            speak("Can't open now, please try again later.")
+            speak("Can't open now, please try again later.", gender)
             print("Can't open now, please try again later.")
 
     #transcribe a note
     elif "remember that" in query:
-        speak("What should I remember")
+        speak("What should I remember", gender)
         data = takecommand()
-        speak("You said me to remember that" + data)
+        speak("You said me to remember that" + data, gender)
         print("You said me to remember that " + str(data))
         remember = open("data.txt", "w")
         remember.write(data)
@@ -133,17 +134,17 @@ def evaluate_query(query):
     #read out transcribed notes
     elif "do you remember anything" in query:
         remember = open("data.txt", "r")
-        speak("You told me to remember that" + remember.read())
+        speak("You told me to remember that" + remember.read(), gender)
         print("You told me to remember that " + str(remember))
 
     #perform a screesnhsot
     elif "screenshot" in query:
         screenshot()
-        speak("I've taken screenshot, please check it")
+        speak("I've taken screenshot, please check it", gender)
 
     #read headlines
-    elif "headlines" or "news" in query:
-        read_headlines()
+    if "headlines" or "news" in query:
+        read_headlines(gender)
 
     #end the program
     elif "offline" in query:

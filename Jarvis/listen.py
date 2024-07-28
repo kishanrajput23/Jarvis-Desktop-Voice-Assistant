@@ -4,6 +4,6 @@ from evaluate_query import evaluate_query
 
 
 #listen to user input and process query
-def listen():
+def listen(gender):
     query = takecommand().lower()
-    evaluate_query(query)
+    evaluate_query(query, gender)
