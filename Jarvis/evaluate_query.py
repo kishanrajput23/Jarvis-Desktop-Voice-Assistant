@@ -20,6 +20,9 @@ from jarvis_actions import takecommand
 #import newsreader
 from jarvis_news import read_headlines
 
+#import email function
+from jarvis_email import scan_inbox
+
 
 #####################-functions-#####################
 def evaluate_query(query, gender):
@@ -149,6 +152,10 @@ def evaluate_query(query, gender):
     elif "headline" not in query:
         if "news" in query:
             read_headlines(gender)
+
+    #read emails
+    elif "email" in query:
+        scan_inbox(gender)
 
     #end the program
     elif "offline" in query:

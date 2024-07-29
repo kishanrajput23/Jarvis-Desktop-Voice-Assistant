@@ -52,3 +52,5 @@ def scan_inbox(gender):
             if todays_month == email_month:
                 if todays_day == email_day:
                     emails_to_read.append(ue)
+
+    read_emails(total_unread_emails, emails_to_read, gender)
