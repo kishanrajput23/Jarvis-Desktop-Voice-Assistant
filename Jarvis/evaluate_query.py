@@ -143,8 +143,12 @@ def evaluate_query(query, gender):
         speak("I've taken screenshot, please check it", gender)
 
     #read headlines
-    if "headlines" or "news" in query:
+    elif "headline" in query:
         read_headlines(gender)
+
+    elif "headline" not in query:
+        if "news" in query:
+            read_headlines(gender)
 
     #end the program
     elif "offline" in query:
