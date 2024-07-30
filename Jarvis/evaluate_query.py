@@ -23,6 +23,9 @@ from jarvis_news import read_headlines
 #import email function
 from jarvis_email import scan_inbox
 
+#import spotify functionality
+from jarvis_spotify import play_song
+
 
 #####################-functions-#####################
 def evaluate_query(query, gender):
@@ -156,6 +159,17 @@ def evaluate_query(query, gender):
     #read emails
     elif "email" in query:
         scan_inbox(gender)
+
+    #play song on spotify
+    elif "spotify" in query:
+        print("What song would you like to play?")
+        speak("What song would you like to play?", gender)
+
+        song = takecommand()
+        print("Playing", song)
+        speak(f"Playing {song}", gender)
+
+        play_song(song)
 
     #end the program
     elif "offline" in query:

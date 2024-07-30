@@ -14,10 +14,9 @@ def play_song(track):
     token_dict = oauth.get_access_token()
     token  = token_dict['access_token']
     spotify = spotipy.Spotify(auth=token)
-    user_name = spotify.current_user()
+    username = spotify.current_user()
 
     #find top result from search request and play song
-    #song = "DNA"
     results = spotify.search(track, 1, 0, 'track')
     song_dict = results['tracks']
     song_items = song_dict['items']
