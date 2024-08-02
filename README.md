@@ -32,19 +32,51 @@ Python 3.6+
 
 ## 📌Installation
 
-- First **Fork** this repo by clicking button on top right corner
-- Then **Clone** the repo in your local machine
-- Navigate to the directory of your project
-- In the terminal run the following command `python -m venv .venv`. This will create a .venv folder in the current directory.
-- Now run the command
-  - For Windows, `.venv/Scripts/activate`.
-  - For MacOS / Linux, `src .venv\Scripts\activate`
-- This activates the virtual environment and should look like `(venv) directory/of/your/project>`
-- Install all the requirements given in **[requirements.txt](https://github.com/kishanrajput23/Jarvis-Desktop-Voice-Assistant/blob/main/requirements.txt)** by running the command `pip install -r requirements.txt`
-- Install **PyAudio** from wheel file by following instructions given **[here](https://stackoverflow.com/questions/52283840/i-cant-install-pyaudio-on-windows-how-to-solve-error-microsoft-visual-c-14)**
-- Run the python script named as ```jarvis.py``` which is in Jarvis Directory.
-- Now Enjoy with your own assistant !!!!
-- After you are done, run `deactivate` command to deactivate the virtual environment.
+1. **Fork The Repository**
+   - Click the "Fork" button on the top right corner of the repository page.
+
+2. **Clone The Repository**
+   - Clone the forked repository to your local machine:
+     ```bash
+     git clone <URL>
+     cd Jarvis-Desktop-Voice-Assistant
+     ```
+
+3.  **Create and Activate a Virtual Environment**
+     - Create a virtual environment:
+     ```bash
+     python -m venv .venv
+     ```
+   - Activate the virtual environment:
+     - For Windows:
+       ```bash
+       .venv\Scripts\activate
+       ```
+     - For macOS/Linux:
+       ```bash
+       source .venv/bin/activate
+       ```
+   - This activates the virtual environment and should look like `(venv) directory/of/your/project>`
+
+4. **Install Requirements**
+
+   - Install all the requirements given in **[requirements.txt](https://github.com/kishanrajput23/Jarvis-Desktop-Voice-Assistant/blob/main/requirements.txt)** by running the command `pip install -r requirements.txt`
+
+5. **Install PyAudio**  
+   - Follow the instructions given **[here](https://stackoverflow.com/questions/52283840/i-cant-install-pyaudio-on-windows-how-to-solve-error-microsoft-visual-c-14)**
+
+6. **Run the Assistant**
+  - Run the main script:
+    ```bash
+    python jarvis.py
+    ```
+  - Now Enjoy with your own assistant !!!!
+
+7. **Deactivate the Virtual Environment**
+   - After you're done, deactivate the virtual environment:
+     ```bash
+     deactivate
+     ```
 
 ## 📌Contributing
 
