@@ -73,6 +73,14 @@ def takecommand():
         query = r.recognize_google(audio, language="en-in")
         print(query)
 
+    except sr.UnknownValueError:
+        speak("Sorry, I did not understand that.")
+        return "Try Again"
+
+    except sr.RequestError:
+        speak("Sorry, my speech service is down.")
+        return "Try Again"
+
     except Exception as e:
         print(e)
         speak("Please say that again")
