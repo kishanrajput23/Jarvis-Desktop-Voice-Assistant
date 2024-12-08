@@ -1,5 +1,4 @@
 import pyttsx3
-import pywin32_system32
 import datetime
 import speech_recognition as sr
 import wikipedia
@@ -9,6 +8,10 @@ import random
 import pyautogui
 
 engine = pyttsx3.init()
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[1].id)  
+engine.setProperty('rate', 150)
+engine.setProperty('volume', 1)
 
 
 def speak(audio) -> None:
@@ -17,167 +20,174 @@ def speak(audio) -> None:
 
 
 def time() -> None:
-    Time = datetime.datetime.now().strftime("%I:%M:%S")
-    speak("the current time is")
-    speak(Time)
-    print("The current time is ", Time)
+    """Tells the current time."""
+    current_time = datetime.datetime.now().strftime("%I:%M:%S %p")
+    speak("The current time is")
+    speak(current_time)
+    print("The current time is", current_time)
 
 
 def date() -> None:
-    day: int = datetime.datetime.now().day
-    month: int = datetime.datetime.now().month
-    year: int = datetime.datetime.now().year
-    speak("the current date is")
-    speak(day)
-    speak(month)
-    speak(year)
-    print(f"The current date is {day}/{month}/{year}")
+    """Tells the current date."""
+    now = datetime.datetime.now()
+    speak("The current date is")
+    speak(f"{now.day} {now.strftime('%B')} {now.year}")
+    print(f"The current date is {now.day}/{now.month}/{now.year}")
 
 
 def wishme() -> None:
-    print("Welcome back sir!!")
-    speak("Welcome back sir!!")
+    """Greets the user based on the time of day."""
+    speak("Welcome back, sir!")
+    print("Welcome back, sir!")
 
-    hour: int = datetime.datetime.now().hour
+    hour = datetime.datetime.now().hour
     if 4 <= hour < 12:
-        speak("Good Morning Sir!!")
-        print("Good Morning Sir!!")
+        speak("Good morning!")
+        print("Good morning!")
     elif 12 <= hour < 16:
-        speak("Good Afternoon Sir!!")
-        print("Good Afternoon Sir!!")
+        speak("Good afternoon!")
+        print("Good afternoon!")
     elif 16 <= hour < 24:
-        speak("Good Evening Sir!!")
-        print("Good Evening Sir!!")
+        speak("Good evening!")
+        print("Good evening!")
     else:
-        speak("Good Night Sir, See You Tommorrow")
+        speak("Good night, see you tomorrow.")
 
-    speak("Jarvis at your service sir, please tell me how may I help you.")
-    print("Jarvis at your service sir, please tell me how may I help you.")
+    assistant_name = load_name()
+    speak(f"{assistant_name} at your service. Please tell me how may I assist you.")
+    print(f"{assistant_name} at your service. Please tell me how may I assist you.")
 
 
 def screenshot() -> None:
+    """Takes a screenshot and saves it."""
     img = pyautogui.screenshot()
-    img_path = os.path.expanduser("~\\Pictures\\ss.png")
+    img_path = os.path.expanduser("~\\Pictures\\screenshot.png")
     img.save(img_path)
+    speak(f"Screenshot saved as {img_path}.")
+    print(f"Screenshot saved as {img_path}.")
 
 
-def takecommand():
+def takecommand() -> str:
+    """Takes microphone input from the user and returns it as text."""
     r = sr.Recognizer()
     with sr.Microphone() as source:
         print("Listening...")
         r.pause_threshold = 1
-        audio = r.listen(source)
+
+        try:
+            audio = r.listen(source, timeout=5)  # Listen with a timeout
+        except sr.WaitTimeoutError:
+            speak("Timeout occurred. Please try again.")
+            return None
 
     try:
         print("Recognizing...")
         query = r.recognize_google(audio, language="en-in")
         print(query)
-
+        return query.lower()
     except sr.UnknownValueError:
         speak("Sorry, I did not understand that.")
-        return "Try Again"
-
+        return None
     except sr.RequestError:
-        speak("Sorry, my speech service is down.")
-        return "Try Again"
-
+        speak("Speech recognition service is unavailable.")
+        return None
     except Exception as e:
-        print(e)
-        speak("Please say that again")
-        return "Try Again"
+        speak(f"An error occurred: {e}")
+        print(f"Error: {e}")
+        return None
 
-    return query
+def play_music(song_name=None) -> None:
+    """Plays music from the user's Music directory."""
+    song_dir = os.path.expanduser("~\\Music")
+    songs = os.listdir(song_dir)
+
+    if song_name:
+        songs = [song for song in songs if song_name.lower() in song.lower()]
+
+    if songs:
+        song = random.choice(songs)
+        os.startfile(os.path.join(song_dir, song))
+        speak(f"Playing {song}.")
+        print(f"Playing {song}.")
+    else:
+        speak("No song found.")
+        print("No song found.")
+
+def set_name() -> None:
+    """Sets a new name for the assistant."""
+    speak("What would you like to name me?")
+    name = takecommand()
+    if name:
+        with open("assistant_name.txt", "w") as file:
+            file.write(name)
+        speak(f"Alright, I will be called {name} from now on.")
+    else:
+        speak("Sorry, I couldn't catch that.")
+
+def load_name() -> str:
+    """Loads the assistant's name from a file, or uses a default name."""
+    try:
+        with open("assistant_name.txt", "r") as file:
+            return file.read().strip()
+    except FileNotFoundError:
+        return "Jarvis"  # Default name
+
+
+def search_wikipedia(query):
+    """Searches Wikipedia and returns a summary."""
+    try:
+        speak("Searching Wikipedia...")
+        result = wikipedia.summary(query, sentences=2)
+        speak(result)
+        print(result)
+    except wikipedia.exceptions.DisambiguationError:
+        speak("Multiple results found. Please be more specific.")
+    except Exception:
+        speak("I couldn't find anything on Wikipedia.")
 
 
 if __name__ == "__main__":
     wishme()
+
     while True:
-        query = takecommand().lower()
+        query = takecommand()
+        if not query:
+            continue
+
         if "time" in query:
             time()
-
         elif "date" in query:
             date()
 
-        elif "who are you" in query:
-            speak("I'm JARVIS created by Mr. Kishan and I'm a desktop voice assistant.")
-            print("I'm JARVIS created by Mr. Kishan and I'm a desktop voice assistant.")
-
-        elif "how are you" in query:
-            speak("I'm fine sir, What about you?")
-            print("I'm fine sir, What about you?")
-
-        elif "fine" in query:
-            speak("Glad to hear that sir!!")
-            print("Glad to hear that sir!!")
-
-        elif "good" in query:
-            speak("Glad to hear that sir!!")
-            print("Glad to hear that sir!!")
 
         elif "wikipedia" in query:
-            try:
-                speak("Ok wait sir, I'm searching...")
-                query = query.replace("wikipedia", "")
-                result = wikipedia.summary(query, sentences=2)
-                print(result)
-                speak(result)
-            except:
-                speak("Can't find this page sir, please ask something else")
+            query = query.replace("wikipedia", "").strip()
+            search_wikipedia(query)
+
+
+        elif "play music" in query:
+            song_name = query.replace("play music", "").strip()
+            play_music(song_name)
 
         elif "open youtube" in query:
             wb.open("youtube.com")
-
         elif "open google" in query:
             wb.open("google.com")
 
-        elif "open stack overflow" in query:
-            wb.open("stackoverflow.com")
-
-        elif "play music" in query:
-            song_dir = os.path.expanduser("~\\Music")
-            songs = os.listdir(song_dir)
-            print(songs)
-            x = len(songs)
-            y = random.randint(0, x)
-            os.startfile(os.path.join(song_dir, songs[y]))
-
-        elif "open chrome" in query:
-            chromePath = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
-            os.startfile(chromePath)
-
-        elif "search on chrome" in query:
-            try:
-                speak("What should I search?")
-                print("What should I search?")
-                chromePath = "C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe"
-                search = takecommand()
-                wb.get(chromePath).open_new_tab(search)
-                print(search)
-
-            except Exception as e:
-                speak("Can't open now, please try again later.")
-                print("Can't open now, please try again later.")
-
-
-        elif "remember that" in query:
-            speak("What should I remember")
-            data = takecommand()
-            speak("You said me to remember that" + data)
-            print("You said me to remember that " + str(data))
-            remember = open("data.txt", "w")
-            remember.write(data)
-            remember.close()
-
-        elif "do you remember anything" in query:
-            remember = open("data.txt", "r")
-            speak("You told me to remember that" + remember.read())
-            print("You told me to remember that " + str(remember))
+        elif "change your name" in query:
+            set_name()
 
         elif "screenshot" in query:
             screenshot()
-            speak("I've taken screenshot, please check it")
 
-
-        elif "offline" in query:
-            quit()
+        elif "shutdown" in query:
+            speak("Shutting down the system, goodbye!")
+            os.system("shutdown /s /f /t 1")
+            break
+        elif "restart" in query:
+            speak("Restarting the system, please wait!")
+            os.system("shutdown /r /f /t 1")
+            break
+        elif "offline" in query or "exit" in query:
+            speak("Going offline. Have a good day!")
+            break
