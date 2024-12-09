@@ -7,6 +7,7 @@ import webbrowser as wb
 import os
 import random
 import pyautogui
+import pyjokes
 
 engine = pyttsx3.init()
 
@@ -59,7 +60,6 @@ def screenshot() -> None:
     img = pyautogui.screenshot()
     img_path = os.path.expanduser("~\\Pictures\\ss.png")
     img.save(img_path)
-
 
 def takecommand():
     r = sr.Recognizer()
@@ -170,6 +170,10 @@ if __name__ == "__main__":
             screenshot()
             speak("I've taken screenshot, please check it")
 
-
+        elif "tell me a joke" in query:
+            joke = pyjokes.get_joke()
+            speak(joke)
+            print(joke)
+        
         elif "offline" in query:
             quit()
