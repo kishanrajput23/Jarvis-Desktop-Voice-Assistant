@@ -156,14 +156,13 @@ if __name__ == "__main__":
 
         if "time" in query:
             time()
+            
         elif "date" in query:
             date()
-
 
         elif "wikipedia" in query:
             query = query.replace("wikipedia", "").strip()
             search_wikipedia(query)
-
 
         elif "play music" in query:
             song_name = query.replace("play music", "").strip()
@@ -171,6 +170,7 @@ if __name__ == "__main__":
 
         elif "open youtube" in query:
             wb.open("youtube.com")
+            
         elif "open google" in query:
             wb.open("google.com")
 
@@ -185,18 +185,17 @@ if __name__ == "__main__":
             joke = pyjokes.get_joke()
             speak(joke)
             print(joke)
-        
-        elif "offline" in query:
-            quit()
 
         elif "shutdown" in query:
             speak("Shutting down the system, goodbye!")
             os.system("shutdown /s /f /t 1")
             break
+            
         elif "restart" in query:
             speak("Restarting the system, please wait!")
             os.system("shutdown /r /f /t 1")
             break
+            
         elif "offline" in query or "exit" in query:
             speak("Going offline. Have a good day!")
             break
