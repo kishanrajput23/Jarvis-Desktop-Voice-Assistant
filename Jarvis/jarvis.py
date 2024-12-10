@@ -6,6 +6,7 @@ import webbrowser as wb
 import os
 import random
 import pyautogui
+import pyjokes
 
 engine = pyttsx3.init()
 voices = engine.getProperty('voices')
@@ -65,7 +66,6 @@ def screenshot() -> None:
     img.save(img_path)
     speak(f"Screenshot saved as {img_path}.")
     print(f"Screenshot saved as {img_path}.")
-
 
 def takecommand() -> str:
     """Takes microphone input from the user and returns it as text."""
@@ -179,6 +179,15 @@ if __name__ == "__main__":
 
         elif "screenshot" in query:
             screenshot()
+            speak("I've taken screenshot, please check it")
+
+        elif "tell me a joke" in query:
+            joke = pyjokes.get_joke()
+            speak(joke)
+            print(joke)
+        
+        elif "offline" in query:
+            quit()
 
         elif "shutdown" in query:
             speak("Shutting down the system, goodbye!")

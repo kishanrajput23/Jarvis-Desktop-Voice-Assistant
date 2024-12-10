@@ -25,6 +25,7 @@ It can do a lot of cool things, some of them being:
 - Plays music
 - Take important note in text file
 - Can take screenshot and save it with custom filename
+- Can tell jokes
 
 ## Requirements
 
