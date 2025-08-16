@@ -17,7 +17,7 @@ engine.setProperty('volume', 1)
 
 def speak(audio) -> None:
     engine.say(audio)
-    engine.runAndWait()
+    engine.runAndWait()----
 
 
 def time() -> None:
