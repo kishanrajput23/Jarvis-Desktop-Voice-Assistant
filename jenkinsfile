@@ -37,11 +37,11 @@ pipeline {
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
                         echo "Creating remote directory..."
-                        ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} \\
-                            "mkdir -p \${REMOTE_DIR} && rm -rf \${REMOTE_DIR}/*" || true
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} \\
+                            "mkdir -p ${REMOTE_DIR} && rm -rf ${REMOTE_DIR}/*" || true
                         
                         echo "Copying ALL files..."
-                        scp -o StrictHostKeyChecking=no -r ./* \${REMOTE_USER}@\${REMOTE_HOST}:\${REMOTE_DIR}/ || echo "SCP completed"
+                        scp -o StrictHostKeyChecking=no -r ./* ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/ || echo "SCP completed"
                         
                         echo "✅ Files deployed successfully"
                     """
@@ -54,7 +54,7 @@ pipeline {
                 echo 'Setting up virtual display on remote server...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} '
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                             # Install Xvfb if not present
                             if ! command -v Xvfb > /dev/null 2>&1; then
                                 echo "Installing Xvfb..."
@@ -82,7 +82,7 @@ pipeline {
                 echo 'Installing system dependencies for pyaudio...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} '
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                             echo "=== Installing System Dependencies ==="
                             sudo apt-get update -qq
                             sudo apt-get install -y -qq \\
@@ -108,12 +108,12 @@ pipeline {
                 echo 'Setting up Python environment on remote server...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} '
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                             set -e
-                            cd \${REMOTE_DIR}
+                            cd ${REMOTE_DIR}
                             
                             echo "=== Checking for virtual environments ==="
-                            ls -la | grep venv
+                            ls -la | grep venv || true
                             
                             # Remove any existing venv directories
                             rm -rf venv .venv
@@ -129,7 +129,7 @@ pipeline {
                             pip install --upgrade pip
                             pip install -r requirements.txt
                             
-                            # Verify installation
+                            # Verify installation with proper quotes
                             echo "=== Verifying installations ==="
                             python3 -c "import pyautogui, speech_recognition, pyaudio, pyttsx3, requests; print('SUCCESS: ALL imports working')"
                             
@@ -145,7 +145,7 @@ pipeline {
                 echo 'Stopping existing application...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} '
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                             set +e
                             sudo pkill -f "python.*main.py" || true
                             sudo pkill -f "python.*jarvis" || true
@@ -164,9 +164,9 @@ pipeline {
                 echo 'Starting Jarvis application...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} '
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                             set -e
-                            cd \${REMOTE_DIR}
+                            cd ${REMOTE_DIR}
                             
                             export DISPLAY=:99
                             . venv/bin/activate
@@ -202,17 +202,17 @@ pipeline {
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
                         sleep 10
-                        ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} "
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
                             echo '=== Verification ==='
                             if pgrep -f 'python.*main.py' > /dev/null; then
                                 echo '✅ Jarvis is RUNNING'
-                                echo 'PID: \$(pgrep -f "python.*main.py")'
+                                echo 'PID: \$(pgrep -f \"python.*main.py\")'
                                 echo '=== Recent Logs ==='
-                                tail -10 \${REMOTE_DIR}/jarvis.log || true
+                                tail -10 ${REMOTE_DIR}/jarvis.log || true
                             else
                                 echo '❌ Jarvis is NOT running'
                                 echo '=== Full Logs ==='
-                                cat \${REMOTE_DIR}/jarvis.log || true
+                                cat ${REMOTE_DIR}/jarvis.log || true
                                 exit 1
                             fi
                         "
