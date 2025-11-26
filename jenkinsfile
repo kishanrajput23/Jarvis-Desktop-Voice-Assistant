@@ -117,9 +117,9 @@ pipeline {
                             echo "=== Stopping existing processes ==="
                             set +e
                             # Only kill processes owned by current user (ubuntu)
-                            pkill -u \\$(id -u) -f "python.*main.py" || echo "No existing process found"
+                            pkill -f "python.*main.py" || echo "No existing process found"
                             sleep 2
-                            pkill -9 -u \\$(id -u) -f "python.*main.py" || echo "No process to kill"
+                            pkill -9 -f "python.*main.py" || echo "No process to kill"
                             set -e
                             echo "Cleanup completed"
                         '
@@ -148,7 +148,7 @@ pipeline {
                             sleep 8
                             
                             echo "=== Checking application status ==="
-                            if ps aux | grep -v grep | grep "python.*main.py" | grep \\$(whoami) > /dev/null; then
+                            if ps aux | grep -v grep | grep "python.*main.py" > /dev/null; then
                                 echo "SUCCESS: Jarvis started successfully"
                                 echo "=== Recent logs ==="
                                 tail -10 jarvis.log
@@ -174,11 +174,11 @@ pipeline {
                             cd '${REMOTE_DIR}'
                             echo "=== Final verification ==="
                             
-                            if ps aux | grep -v grep | grep "python.*main.py" | grep \\$(whoami) > /dev/null; then
+                            if ps aux | grep -v grep | grep "python.*main.py" > /dev/null; then
                                 echo "SUCCESS: DEPLOYMENT COMPLETED"
                                 echo "Jarvis is running on the server"
                                 echo "=== Process info ==="
-                                ps aux | grep -v grep | grep "python.*main.py" | grep \\$(whoami)
+                                ps aux | grep -v grep | grep "python.*main.py"
                                 echo "=== Latest logs ==="
                                 tail -5 jarvis.log
                             else
