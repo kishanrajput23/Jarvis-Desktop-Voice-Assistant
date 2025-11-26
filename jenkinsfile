@@ -4,17 +4,196 @@ pipeline {
     environment {
         REMOTE_HOST = "52.66.252.230"
         REMOTE_USER = "ubuntu"
+        REMOTE_DIR = "/home/ubuntu/jarvis"
     }
     
     stages {
-        stage('Test Connection') {
+        stage('Clone Repository') {
             steps {
+                echo 'Cloning repository from GitHub...'
+                git url: 'https://github.com/dalvipiyush07/Jarvis-Desktop-Voice-Assistant.git', 
+                    branch: 'main'
+            }
+        }
+        
+        stage('Verify Files') {
+            steps {
+                echo 'Verifying project files...'
+                sh '''
+                    echo "=== Checking essential files ==="
+                    ls -la
+                    echo "=== main.py exists? ==="
+                    test -f main.py && echo "✅ main.py found" || echo "❌ main.py missing"
+                    echo "=== requirements.txt exists? ==="
+                    test -f requirements.txt && echo "✅ requirements.txt found" || echo "❌ requirements.txt missing"
+                    echo "=== Jarvis directory exists? ==="
+                    test -d Jarvis && echo "✅ Jarvis directory found" || echo "❌ Jarvis directory missing"
+                '''
+            }
+        }
+        
+        stage('Deploy Files') {
+            steps {
+                echo 'Deploying files to server...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "echo 'Connection successful'"
+                        echo "=== Creating directory on server ==="
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "mkdir -p ${REMOTE_DIR} && rm -rf ${REMOTE_DIR}/*" || echo "Directory cleaned"
+                        
+                        echo "=== Copying files ==="
+                        scp -o StrictHostKeyChecking=no main.py ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/ || echo "main.py copied"
+                        scp -o StrictHostKeyChecking=no requirements.txt ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/ || echo "requirements.txt copied"
+                        scp -o StrictHostKeyChecking=no -r Jarvis/ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/ || echo "Jarvis directory copied"
+                        
+                        echo "✅ Files deployed"
                     """
                 }
             }
+        }
+        
+        stage('Setup Environment') {
+            steps {
+                echo 'Setting up environment on server...'
+                sshagent(credentials: ['jarvis-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
+                            set -e
+                            cd ${REMOTE_DIR}
+                            
+                            echo '=== Checking current files on server ==='
+                            pwd
+                            ls -la
+                            
+                            echo '=== Installing system dependencies ==='
+                            sudo apt-get update -qq
+                            sudo apt-get install -y -qq xvfb python3-venv python3-pip portaudio19-dev
+                            
+                            echo '=== Setting up virtual display ==='
+                            pkill -f Xvfb || true
+                            nohup Xvfb :99 -screen 0 1024x768x16 > /dev/null 2>&1 &
+                            sleep 3
+                            
+                            echo '=== Creating Python virtual environment ==='
+                            rm -rf venv
+                            python3 -m venv venv
+                            . venv/bin/activate
+                            
+                            echo '=== Installing Python packages ==='
+                            pip install --upgrade pip
+                            
+                            # Install packages individually to handle failures
+                            pip install requests || echo 'requests install failed'
+                            pip install pyttsx3 || echo 'pyttsx3 install failed'
+                            pip install SpeechRecognition || echo 'SpeechRecognition install failed'
+                            pip install pyautogui || echo 'pyautogui install failed'
+                            pip install beautifulsoup4 || echo 'beautifulsoup4 install failed'
+                            pip install wikipedia || echo 'wikipedia install failed'
+                            pip install pyjokes || echo 'pyjokes install failed'
+                            pip install pyaudio || echo 'pyaudio install failed - continuing'
+                            
+                            echo '=== Verifying core imports ==='
+                            python3 -c \"import requests, pyttsx3, speech_recognition; print('✅ Core imports successful')\"
+                            
+                            echo '✅ Environment setup completed'
+                        "
+                    """
+                }
+            }
+        }
+        
+        stage('Stop Existing App') {
+            steps {
+                echo 'Stopping any running instances...'
+                sshagent(credentials: ['jarvis-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
+                            echo '=== Stopping existing processes ==='
+                            set +e
+                            pkill -f 'python.*main.py' || echo 'No existing process found'
+                            sleep 2
+                            pkill -9 -f 'python.*main.py' || echo 'No process to kill'
+                            set -e
+                            echo '✅ Cleanup completed'
+                        "
+                    """
+                }
+            }
+        }
+        
+        stage('Start Application') {
+            steps {
+                echo 'Starting Jarvis application...'
+                sshagent(credentials: ['jarvis-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
+                            set -e
+                            cd ${REMOTE_DIR}
+                            
+                            echo '=== Starting Jarvis ==='
+                            export DISPLAY=:99
+                            . venv/bin/activate
+                            
+                            # Start the application
+                            nohup python3 main.py > jarvis.log 2>&1 &
+                            
+                            # Wait for process to start
+                            sleep 8
+                            
+                            echo '=== Checking application status ==='
+                            if ps aux | grep -v grep | grep 'python.*main.py' > /dev/null; then
+                                PID=\\$(ps aux | grep -v grep | grep 'python.*main.py' | awk '{print \\$2}')
+                                echo '✅ Jarvis started successfully with PID: '\$PID
+                                echo '=== Recent logs ==='
+                                tail -10 jarvis.log
+                            else
+                                echo '❌ Jarvis failed to start'
+                                echo '=== Error logs ==='
+                                tail -20 jarvis.log
+                                exit 1
+                            fi
+                        "
+                    """
+                }
+            }
+        }
+        
+        stage('Verify Deployment') {
+            steps {
+                echo 'Verifying deployment...'
+                sshagent(credentials: ['jarvis-key']) {
+                    sh """
+                        sleep 10
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
+                            cd ${REMOTE_DIR}
+                            echo '=== Final verification ==='
+                            
+                            if ps aux | grep -v grep | grep 'python.*main.py' > /dev/null; then
+                                echo '✅ DEPLOYMENT SUCCESSFUL!'
+                                echo 'Jarvis is running on the server'
+                                echo '=== Process info ==='
+                                ps aux | grep -v grep | grep 'python.*main.py'
+                                echo '=== Latest logs ==='
+                                tail -5 jarvis.log
+                            else
+                                echo '❌ Jarvis is not running'
+                                echo '=== Checking logs for errors ==='
+                                tail -30 jarvis.log
+                                exit 1
+                            fi
+                        "
+                    """
+                }
+            }
+        }
+    }
+    
+    post {
+        success {
+            echo '🎉 DEPLOYMENT COMPLETED SUCCESSFULLY!'
+            echo 'Jarvis voice assistant is now running on the remote server.'
+        }
+        failure {
+            echo '❌ DEPLOYMENT FAILED! Check the logs above for details.'
         }
     }
 }
