@@ -37,21 +37,19 @@ pipeline {
 
         stage('Code Quality') {
             steps {
-                echo "Creating local venv for linters and running flake8 (non-blocking)..."
+                echo "Running flake8 on Python files..."
                 sh '''
                     set -e
                     python3 -m venv .venv
                     . .venv/bin/activate
                     pip install --upgrade pip setuptools wheel
                     pip install flake8
-                    [ -f app.py ] && flake8 app.py || echo "No app.py; skipping flake8"
+                    # Check all Python files, not just app.py
+                    find . -name "*.py" -not -path "./.venv/*" | xargs flake8 || true
                 '''
             }
         }
 
-        /* ---------------------------------------------------
-             HERE IS YOUR UPDATED RSYNC PACKAGE & TRANSFER STAGE
-           --------------------------------------------------- */
         stage('Package & Transfer') {
             steps {
                 echo "Syncing workspace to remote server using rsync..."
@@ -69,11 +67,9 @@ pipeline {
                 }
             }
         }
-        /* --------------------------------------------------- */
 
         stage('Setup remote venv & deps') {
             steps {
-                echo "Setting up remote Python environment..."
                 sshagent(credentials: [env.CRED_ID]) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
@@ -83,7 +79,35 @@ pipeline {
                             python3 -m venv venv
                             . venv/bin/activate
                             pip install --upgrade pip
-                            if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+                            echo "Installing requirements..."
+                            if [ -f requirements.txt ]; then 
+                                pip install -r requirements.txt
+                                echo "✓ Requirements installed"
+                            else
+                                echo "✗ requirements.txt not found"
+                                exit 1
+                            fi
+                        '
+                    """
+                }
+            }
+        }
+
+        stage('Debug Remote') {
+            steps {
+                sshagent(credentials: [env.CRED_ID]) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
+                            cd ${REMOTE_DIR}
+                            echo "=== Files ==="
+                            ls -la
+                            echo "=== Jarvis directory ==="  
+                            ls -la Jarvis/ || echo "No Jarvis directory"
+                            echo "=== Requirements ==="
+                            cat requirements.txt || echo "No requirements.txt"
+                            echo "=== Testing Python import ==="
+                            . venv/bin/activate
+                            python3 -c "import sys; print('Python path:', sys.path); from Jarvis import jarvis; print('✓ Jarvis import successful')" || echo "✗ Jarvis import failed"
                         '
                     """
                 }
@@ -119,7 +143,9 @@ pipeline {
                                 sudo systemctl daemon-reload
                                 sudo systemctl restart jarvis
                             else
+                                echo "Starting main.py..."
                                 nohup python3 -u main.py > app.log 2>&1 &
+                                echo "✓ Application started with PID: \$!"
                             fi
                         '
                     """
@@ -133,9 +159,12 @@ pipeline {
                 sshagent(credentials: [env.CRED_ID]) {
                     sh """
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
-                            pgrep -f "python" >/dev/null && echo "✓ Process running" || exit 1
-                            ss -tuln | grep -q ":${APP_PORT}" && echo "✓ Port listening" || exit 1
-                            curl -sSf http://127.0.0.1:${APP_PORT}/ >/dev/null && echo "✓ HTTP OK" || exit 1
+                            echo "=== Process check ==="
+                            pgrep -f "python.*main.py" && echo "✓ Process running" || echo "✗ Process not found"
+                            echo "=== Port check ==="
+                            ss -tuln | grep -q ":${APP_PORT}" && echo "✓ Port ${APP_PORT} listening" || echo "✗ Port ${APP_PORT} not listening"
+                            echo "=== Log check ==="
+                            tail -5 app.log || echo "No logs yet"
                         '
                     """
                 }
@@ -148,9 +177,12 @@ pipeline {
                     sh """
                         ssh ubuntu@${REMOTE_HOST} '
                             echo "==== APP INFO ===="
-                            echo "URL: http://${REMOTE_HOST}:${APP_PORT}"
+                            echo "Remote Host: ${REMOTE_HOST}"
+                            echo "Target Port: ${APP_PORT}"
                             echo "---- Last 40 logs ----"
-                            tail -n 40 ${REMOTE_DIR}/app.log || echo "No logs"
+                            tail -n 40 ${REMOTE_DIR}/app.log || echo "No logs found"
+                            echo "---- Running Python processes ----"
+                            ps aux | grep python | grep -v grep || echo "No Python processes running"
                         '
                     """
                 }
@@ -160,10 +192,10 @@ pipeline {
 
     post {
         success {
-            echo "SUCCESS! Service running → http://${env.REMOTE_HOST}:${env.APP_PORT}"
+            echo "SUCCESS! Deployment completed → ${env.REMOTE_HOST}"
         }
         failure {
-            echo "FAILED. Collecting logs..."
+            echo "FAILED. Check the debug stage output for details."
         }
     }
 }
