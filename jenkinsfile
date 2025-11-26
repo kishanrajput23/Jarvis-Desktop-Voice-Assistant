@@ -36,29 +36,48 @@ pipeline {
 
         stage('Code Quality') {
             steps {
-                echo "Running quick code-lint (non-failing)..."
+                echo "Creating local venv for linters and running flake8 (non-blocking)..."
                 sh '''
-                  python3 -m pip install --user flake8 || true
-                  python3 -m flake8 --max-line-length=120 || true
-                  echo "Code quality check done (non-blocking)."
+                  set -e
+                  # create workspace-level venv to avoid system pip issues
+                  if [ -d ".venv" ]; then rm -rf .venv || true; fi
+                  python3 -m venv .venv
+                  . .venv/bin/activate
+                  pip install --upgrade pip setuptools wheel || true
+                  pip install flake8 || true
+                  # run flake8 if files exist
+                  if [ -f app.py ]; then
+                    . .venv/bin/activate
+                    flake8 --max-line-length=120 || true
+                  else
+                    echo "No app.py; skipping flake8 on app.py"
+                  fi
                 '''
             }
         }
 
         stage('Package & Transfer') {
             steps {
-                echo "Packaging workspace and transferring to remote..."
+                echo "Creating git archive (HEAD) and transferring to remote..."
                 sshagent(credentials: [env.CRED_ID]) {
-                    sh """
-                      # create a tarball of workspace (exclude .git to reduce size)
-                      tar --exclude='.git' -czf workspace.tar.gz .
+                    sh '''
+                      set -e
+                      # create deterministic archive from current HEAD
+                      git rev-parse --verify HEAD >/dev/null 2>&1 || { echo "git HEAD not available"; exit 1; }
+                      ARCHIVE=/tmp/workspace-${BUILD_NUMBER}.tar.gz
+                      git archive --format=tar.gz -o "${ARCHIVE}" HEAD
+
                       # ensure remote dir exists
-                      ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'mkdir -p ${REMOTE_DIR}'
-                      # stream tarball and extract atomically on remote
-                      cat workspace.tar.gz | ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'tar -xzf - -C ${REMOTE_DIR}'
-                      rm -f workspace.tar.gz
+                      ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "mkdir -p ${REMOTE_DIR}"
+
+                      # copy archive and extract on remote atomically
+                      scp -o StrictHostKeyChecking=no "${ARCHIVE}" ${REMOTE_USER}@${REMOTE_HOST}:/tmp/ || { echo "scp failed"; exit 1; }
+                      ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "tar -xzf /tmp/$(basename ${ARCHIVE}) -C ${REMOTE_DIR} && rm -f /tmp/$(basename ${ARCHIVE})"
+
+                      # cleanup local archive
+                      rm -f "${ARCHIVE}"
                       echo "Files transferred to ${REMOTE_HOST}:${REMOTE_DIR}"
-                    """
+                    '''
                 }
             }
         }
@@ -67,13 +86,13 @@ pipeline {
             steps {
                 echo "Creating virtualenv and installing requirements on remote..."
                 sshagent(credentials: [env.CRED_ID]) {
-                    sh """
+                    sh '''
                       ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                         set -e
                         cd ${REMOTE_DIR}
                         # ensure python3 exists
-                        command -v python3 >/dev/null 2>&1 || { echo "python3 not found"; exit 1; }
-                        # remove old venv to ensure clean env
+                        command -v python3 >/dev/null 2>&1 || { echo "python3 not found on remote"; exit 1; }
+                        # recreate clean venv
                         if [ -d "venv" ]; then rm -rf venv; fi
                         python3 -m venv venv
                         . venv/bin/activate
@@ -83,9 +102,9 @@ pipeline {
                         else
                           echo "No requirements.txt found, skipping pip install"
                         fi
-                        echo "Virtualenv ready"
+                        echo "Virtualenv ready on remote"
                       '
-                    """
+                    '''
                 }
             }
         }
@@ -94,10 +113,9 @@ pipeline {
             steps {
                 echo "Stopping existing service or python processes if any..."
                 sshagent(credentials: [env.CRED_ID]) {
-                    sh """
+                    sh '''
                       ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                         set -e
-                        # Prefer systemd service if exists
                         if systemctl --quiet status jarvis; then
                           echo "Stopping systemd service jarvis..."
                           sudo systemctl stop jarvis || true
@@ -107,7 +125,7 @@ pipeline {
                         fi
                         sleep 2
                       '
-                    """
+                    '''
                 }
             }
         }
@@ -116,19 +134,17 @@ pipeline {
             steps {
                 echo "Starting application on remote..."
                 sshagent(credentials: [env.CRED_ID]) {
-                    sh """
+                    sh '''
                       ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                         set -e
                         cd ${REMOTE_DIR}
                         . venv/bin/activate
 
-                        # Preferred: if systemd service exists, use it (will use unit created earlier)
                         if [ -f /etc/systemd/system/jarvis.service ] || systemctl list-unit-files | grep -q jarvis; then
                           echo "Using systemd to start jarvis service..."
                           sudo systemctl daemon-reload || true
                           sudo systemctl start jarvis || sudo systemctl restart jarvis || true
                         else
-                          # fallback: start via nohup
                           echo "Starting via nohup python (fallback)..."
                           nohup python3 -u main.py > app.log 2>&1 & || nohup python3 -u app.py > app.log 2>&1 &
                         fi
@@ -136,7 +152,7 @@ pipeline {
                         sleep 3
                         echo "Start attempted."
                       '
-                    """
+                    '''
                 }
             }
         }
@@ -145,17 +161,15 @@ pipeline {
             steps {
                 echo "Verifying application on remote..."
                 sshagent(credentials: [env.CRED_ID]) {
-                    sh """
+                    sh '''
                       ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                         set -e
-                        # check process
                         if pgrep -f "python.*(main|app|wsgi)" >/dev/null 2>&1 || systemctl --quiet is-active jarvis; then
                           echo "✓ Process/service running"
                         else
                           echo "✗ No running process/service found" ; exit 1
                         fi
 
-                        # port listen check (netstat or ss)
                         if ss -tuln | grep -q ":${APP_PORT}"; then
                           echo "✓ Port ${APP_PORT} is listening"
                         elif netstat -tuln | grep -q ":${APP_PORT}"; then
@@ -164,14 +178,13 @@ pipeline {
                           echo "✗ Port ${APP_PORT} not listening" ; exit 1
                         fi
 
-                        # HTTP check (local curl)
                         if curl -sSf http://127.0.0.1:${APP_PORT}/ >/dev/null 2>&1; then
                           echo "✓ HTTP health-check passed"
                         else
                           echo "✗ HTTP health-check failed — showing last logs"; tail -n 200 ${REMOTE_DIR}/app.log || true; exit 1
                         fi
                       '
-                    """
+                    '''
                 }
             }
         }
@@ -180,7 +193,7 @@ pipeline {
             steps {
                 echo "Displaying remote app info and last logs..."
                 sshagent(credentials: [env.CRED_ID]) {
-                    sh """
+                    sh '''
                       ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                         echo "==== APP INFO ===="
                         echo "URL: http://${REMOTE_HOST}:${APP_PORT}"
@@ -190,7 +203,7 @@ pipeline {
                         tail -n 40 ${REMOTE_DIR}/app.log || echo "No logs"
                         echo "==================="
                       '
-                    """
+                    '''
                 }
             }
         }
@@ -203,9 +216,9 @@ pipeline {
         failure {
             echo "❌ Deployment failed — collecting remote logs..."
             sshagent(credentials: [env.CRED_ID]) {
-                sh """
-                  ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'echo \"---- remote last 200 lines of app.log ----\"; tail -n 200 ${REMOTE_DIR}/app.log || echo \"No app.log\"' || true
-                """
+                sh '''
+                  ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'echo "---- remote last 200 lines of app.log ----"; tail -n 200 ${REMOTE_DIR}/app.log || echo "No app.log"'
+                '''
             }
         }
         always {
