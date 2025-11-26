@@ -232,27 +232,27 @@ EOF
                             # Activate virtual environment
                             . venv/bin/activate
                             
-                            # Configure PyAutoGUI for headless environment
-                            python3 -c "
+                            # Configure PyAutoGUI for headless environment - FIXED
+                            python3 -c \"
 import pyautogui
 pyautogui.FAILSAFE = False
 print('PyAutoGUI configured for headless environment')
-                            "
+                            \"
                             
                             # Start application
-                            echo "Starting Jarvis application..."
+                            echo \"Starting Jarvis application...\"
                             nohup python3 main.py > jarvis.log 2>&1 &
                             
                             # Wait a bit for app to start
                             sleep 5
                             
                             # Get PID
-                            APP_PID=\$(pgrep -f "python.*main.py" || echo "N/A")
-                            echo "✅ Application started - PID: \$APP_PID"
+                            APP_PID=\\$(pgrep -f \"python.*main.py\" || echo \"N/A\")
+                            echo \"✅ Application started - PID: \\$APP_PID\"
                             
                             # Show last few lines of log
-                            echo "---- Application Log (last 10 lines) ----"
-                            tail -n 10 jarvis.log 2>/dev/null || echo "No logs yet"
+                            echo \"---- Application Log (last 10 lines) ----\"
+                            tail -n 10 jarvis.log 2>/dev/null || echo \"No logs yet\"
                         '
                     """
                 }
@@ -282,9 +282,9 @@ print('PyAutoGUI configured for headless environment')
                             
                             # Check application logs for errors - FIXED
                             echo 'Checking application logs for errors...'
-                            if tail -n 10 ${REMOTE_DIR}/jarvis.log 2>/dev/null | grep -i \"error\\|exception\\|traceback\" > /dev/null; then
+                            if tail -n 10 ${REMOTE_DIR}/jarvis.log 2>/dev/null | grep -i \"error\\\\|exception\\\\|traceback\" > /dev/null; then
                                 echo '⚠️  Potential errors found in logs:'
-                                tail -n 20 ${REMOTE_DIR}/jarvis.log | grep -i \"error\\|exception\\|traceback\" || true
+                                tail -n 20 ${REMOTE_DIR}/jarvis.log | grep -i \"error\\\\|exception\\\\|traceback\" || true
                             else
                                 echo '✓ No errors found in recent logs'
                             fi
@@ -307,7 +307,7 @@ print('PyAutoGUI configured for headless environment')
                             echo "=========================================="
                             echo "Remote Host: ${REMOTE_HOST}"
                             echo "Remote Path: ${REMOTE_DIR}"
-                            echo "PID: \$(pgrep -f "python.*main.py" || echo "N/A")"
+                            echo "PID: \\$(pgrep -f \"python.*main.py\" || echo \"N/A\")"
                             echo "=========================================="
                             echo ""
                             echo "Application Logs (last 20 lines):"
