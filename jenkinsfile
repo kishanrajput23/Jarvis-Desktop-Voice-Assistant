@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        REMOTE_HOST = "13.204.143.16"
+        REMOTE_HOST = "52.66.252.230"
         REMOTE_USER = "ubuntu"
         REMOTE_DIR = "/home/ubuntu/jarvis"
         APP_PORT = "8000"
