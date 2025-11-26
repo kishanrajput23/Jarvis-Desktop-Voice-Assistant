@@ -97,9 +97,9 @@ pipeline {
                             pip install pyaudio || echo "pyaudio install failed - continuing"
                             
                             echo "=== Verifying core imports ==="
-                            python3 -c "import requests; print('SUCCESS: requests imported')"
-                            python3 -c "import pyttsx3; print('SUCCESS: pyttsx3 imported')"
-                            python3 -c "import speech_recognition; print('SUCCESS: speech_recognition imported')"
+                            python3 -c "import requests; print('requests imported successfully')"
+                            python3 -c "import pyttsx3; print('pyttsx3 imported successfully')"
+                            python3 -c "import speech_recognition; print('speech_recognition imported successfully')"
                             
                             echo "Environment setup completed"
                         '
