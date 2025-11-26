@@ -108,26 +108,6 @@ pipeline {
             }
         }
         
-        stage('Stop Existing App') {
-            steps {
-                echo 'Stopping any running instances...'
-                sshagent(credentials: ['jarvis-key']) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
-                            echo "=== Stopping existing processes ==="
-                            set +e
-                            # Only kill processes owned by current user (ubuntu)
-                            pkill -f "python.*main.py" || echo "No existing process found"
-                            sleep 2
-                            pkill -9 -f "python.*main.py" || echo "No process to kill"
-                            set -e
-                            echo "Cleanup completed"
-                        '
-                    """
-                }
-            }
-        }
-        
         stage('Start Application') {
             steps {
                 echo 'Starting Jarvis application...'
