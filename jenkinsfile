@@ -49,12 +49,12 @@ pipeline {
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
                         echo "Creating remote directory..."
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} \
-                            "mkdir -p ${REMOTE_DIR}" || { echo "❌ mkdir failed"; exit 1; }
+                        ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} \\
+                            "mkdir -p \${REMOTE_DIR}" || { echo "❌ mkdir failed"; exit 1; }
                         
                         echo "Copying application files..."
-                        rsync -avz --delete --exclude='.git' --exclude='.venv' --exclude='venv' \
-                            ./ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/ || { echo "❌ rsync failed"; exit 1; }
+                        rsync -avz --delete --exclude='.git' --exclude='.venv' --exclude='venv' \\
+                            ./ \${REMOTE_USER}@\${REMOTE_HOST}:\${REMOTE_DIR}/ || { echo "❌ rsync failed"; exit 1; }
                         
                         echo "✅ Files deployed successfully"
                     """
@@ -67,7 +67,7 @@ pipeline {
                 echo 'Setting up virtual display on remote server...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
+                        ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} '
                             # Xvfb install करा (जर नसेल तर)
                             if ! command -v Xvfb > /dev/null 2>&1; then
                                 echo "Installing Xvfb..."
@@ -99,9 +99,9 @@ pipeline {
                 echo 'Setting up Python virtual environment on remote server...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
+                        ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} '
                             set -e
-                            cd ${REMOTE_DIR}
+                            cd \${REMOTE_DIR}
                             
                             echo "Current directory: \$(pwd)"
                             echo "Files in directory:"
@@ -138,8 +138,8 @@ pipeline {
                 echo 'Debugging remote environment...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
-                            cd ${REMOTE_DIR}
+                        ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} '
+                            cd \${REMOTE_DIR}
                             export DISPLAY=:99
                             
                             echo "=== Files ==="
@@ -151,7 +151,6 @@ pipeline {
                             echo "=== Testing Python Import ==="
                             . venv/bin/activate
                             
-                            # FIXED: Proper Python syntax with quotes
                             cat > test_import.py << "EOF"
 import os
 import sys
@@ -159,7 +158,6 @@ print("Python path:", sys.path)
 print("DISPLAY:", os.environ.get("DISPLAY", "Not set"))
 
 try:
-    # Headless environment साठी pyautogui configure करा
     import pyautogui
     pyautogui.FAILSAFE = False
     print("PyAutoGUI configured successfully")
@@ -187,7 +185,7 @@ EOF
                 echo 'Stopping existing application instances...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
+                        ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} '
                             set +e
                             echo "Checking for running app processes..."
                             
@@ -222,7 +220,7 @@ EOF
                 echo 'Starting the Jarvis application...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
+                        ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} '
                             set -e
                             cd \${REMOTE_DIR}
                             
@@ -232,27 +230,27 @@ EOF
                             # Activate virtual environment
                             . venv/bin/activate
                             
-                            # Configure PyAutoGUI for headless environment - FIXED
-                            python3 -c \"
+                            # Configure PyAutoGUI for headless environment
+                            python3 -c "
 import pyautogui
 pyautogui.FAILSAFE = False
 print('PyAutoGUI configured for headless environment')
-                            \"
+                            "
                             
                             # Start application
-                            echo \"Starting Jarvis application...\"
+                            echo "Starting Jarvis application..."
                             nohup python3 main.py > jarvis.log 2>&1 &
                             
                             # Wait a bit for app to start
                             sleep 5
                             
                             # Get PID
-                            APP_PID=\\$(pgrep -f \"python.*main.py\" || echo \"N/A\")
-                            echo \"✅ Application started - PID: \\$APP_PID\"
+                            APP_PID=\$(pgrep -f "python.*main.py" || echo "N/A")
+                            echo "✅ Application started - PID: \$APP_PID"
                             
                             # Show last few lines of log
-                            echo \"---- Application Log (last 10 lines) ----\"
-                            tail -n 10 jarvis.log 2>/dev/null || echo \"No logs yet\"
+                            echo "---- Application Log (last 10 lines) ----"
+                            tail -n 10 jarvis.log 2>/dev/null || echo "No logs yet"
                         '
                     """
                 }
@@ -267,7 +265,7 @@ print('PyAutoGUI configured for headless environment')
                         echo "Waiting for application to be ready..."
                         sleep 5
                         
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
+                        ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} "
                             echo 'Testing application health...'
                             
                             # Check if process is running
@@ -276,15 +274,15 @@ print('PyAutoGUI configured for headless environment')
                             else
                                 echo '✗ Application process not found'
                                 echo 'Checking application logs:'
-                                tail -n 20 ${REMOTE_DIR}/jarvis.log || true
+                                tail -n 20 \${REMOTE_DIR}/jarvis.log || true
                                 exit 1
                             fi
                             
-                            # Check application logs for errors - FIXED
+                            # Check application logs for errors
                             echo 'Checking application logs for errors...'
-                            if tail -n 10 ${REMOTE_DIR}/jarvis.log 2>/dev/null | grep -i \"error\\\\|exception\\\\|traceback\" > /dev/null; then
+                            if tail -n 10 \${REMOTE_DIR}/jarvis.log 2>/dev/null | grep -i \"error\\\\|exception\\\\|traceback\" > /dev/null; then
                                 echo '⚠️  Potential errors found in logs:'
-                                tail -n 20 ${REMOTE_DIR}/jarvis.log | grep -i \"error\\\\|exception\\\\|traceback\" || true
+                                tail -n 20 \${REMOTE_DIR}/jarvis.log | grep -i \"error\\\\|exception\\\\|traceback\" || true
                             else
                                 echo '✓ No errors found in recent logs'
                             fi
@@ -301,18 +299,18 @@ print('PyAutoGUI configured for headless environment')
                 echo 'Displaying application information...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
+                        ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} '
                             echo "=========================================="
                             echo "Jarvis Application Information"
                             echo "=========================================="
-                            echo "Remote Host: ${REMOTE_HOST}"
-                            echo "Remote Path: ${REMOTE_DIR}"
-                            echo "PID: \\$(pgrep -f \"python.*main.py\" || echo \"N/A\")"
+                            echo "Remote Host: \${REMOTE_HOST}"
+                            echo "Remote Path: \${REMOTE_DIR}"
+                            echo "PID: \$(pgrep -f "python.*main.py" || echo "N/A")"
                             echo "=========================================="
                             echo ""
                             echo "Application Logs (last 20 lines):"
                             echo "=========================================="
-                            tail -n 20 ${REMOTE_DIR}/jarvis.log 2>/dev/null || echo "No logs available"
+                            tail -n 20 \${REMOTE_DIR}/jarvis.log 2>/dev/null || echo "No logs available"
                             echo "=========================================="
                         '
                     """
@@ -340,10 +338,10 @@ print('PyAutoGUI configured for headless environment')
             sshagent(credentials: ['jarvis-key']) {
                 sh """
                     echo "Collecting error logs..."
-                    ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
-                        if [ -f ${REMOTE_DIR}/jarvis.log ]; then
+                    ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} '
+                        if [ -f \${REMOTE_DIR}/jarvis.log ]; then
                             echo "---- Jarvis Logs (last 50 lines) ----"
-                            tail -n 50 ${REMOTE_DIR}/jarvis.log || true
+                            tail -n 50 \${REMOTE_DIR}/jarvis.log || true
                         else
                             echo "No application logs found"
                         fi
