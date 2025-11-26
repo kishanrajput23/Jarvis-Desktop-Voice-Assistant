@@ -156,7 +156,7 @@ EOF
                             echo "Installing other packages..."
                             pip install pyautogui speechrecognition pyttsx3 requests selenium beautifulsoup4 pygame
                             
-                            # Final verification
+                            # Final verification - FIXED: Remove emoji
                             echo "=== Verifying installations ==="
                             python3 -c "
 import pyautogui
@@ -164,7 +164,7 @@ import speech_recognition
 import pyaudio
 import pyttsx3
 import requests
-print('✅ ALL imports successful')
+print('SUCCESS: ALL imports successful')
                             "
                             
                             echo "✅ Environment setup completed"
