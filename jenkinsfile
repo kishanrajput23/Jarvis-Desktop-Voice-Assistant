@@ -27,8 +27,6 @@ pipeline {
                     ls -la
                     echo "=== Python Files ==="
                     find . -name "*.py" | head -10
-                    echo "=== Requirements File ==="
-                    find . -name "requirements.txt" 2>/dev/null || echo "requirements.txt not found locally"
                 '''
             }
         }
@@ -79,7 +77,33 @@ pipeline {
             }
         }
         
-        stage('Setup Environment') {
+        stage('Install System Dependencies') {
+            steps {
+                echo 'Installing system dependencies for pyaudio...'
+                sshagent(credentials: ['jarvis-key']) {
+                    sh """
+                        ssh -o StrictHostKeyChecking=no \${REMOTE_USER}@\${REMOTE_HOST} '
+                            echo "=== Installing System Dependencies ==="
+                            sudo apt-get update -qq
+                            sudo apt-get install -y -qq \\
+                                python3-dev \\
+                                portaudio19-dev \\
+                                libasound2-dev \\
+                                libjack-dev \\
+                                libpulse-dev \\
+                                build-essential \\
+                                gcc \\
+                                g++ \\
+                                alsa-utils
+                            
+                            echo "✅ System dependencies installed"
+                        '
+                    """
+                }
+            }
+        }
+        
+        stage('Setup Python Environment') {
             steps {
                 echo 'Setting up Python environment on remote server...'
                 sshagent(credentials: ['jarvis-key']) {
@@ -92,7 +116,7 @@ pipeline {
                             pwd
                             ls -la
                             
-                            # FORCE CREATE requirements.txt
+                            # Create requirements.txt
                             echo "Creating requirements.txt..."
                             cat > requirements.txt << "EOF"
 pyautogui
@@ -117,7 +141,31 @@ EOF
                             . venv/bin/activate
                             
                             pip install --upgrade pip
-                            pip install -r requirements.txt
+                            pip install wheel setuptools
+                            
+                            echo "=== Installing packages ==="
+                            
+                            # Install pyaudio FIRST with specific flags
+                            echo "Installing pyaudio..."
+                            pip install pyaudio || {
+                                echo "Trying alternative pyaudio build..."
+                                pip install --global-option="build_ext" --global-option="-I/usr/include" pyaudio
+                            }
+                            
+                            # Install other packages
+                            echo "Installing other packages..."
+                            pip install pyautogui speechrecognition pyttsx3 requests selenium beautifulsoup4 pygame
+                            
+                            # Final verification
+                            echo "=== Verifying installations ==="
+                            python3 -c "
+import pyautogui
+import speech_recognition
+import pyaudio
+import pyttsx3
+import requests
+print('✅ ALL imports successful')
+                            "
                             
                             echo "✅ Environment setup completed"
                         '
