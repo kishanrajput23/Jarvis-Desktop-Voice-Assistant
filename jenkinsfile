@@ -224,7 +224,7 @@ EOF
                     sh """
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                             set -e
-                            cd ${REMOTE_DIR}
+                            cd \${REMOTE_DIR}
                             
                             # Set DISPLAY for GUI applications
                             export DISPLAY=:99
