@@ -4,244 +4,41 @@ pipeline {
     environment {
         REMOTE_HOST = "52.66.252.230"
         REMOTE_USER = "ubuntu"
-        REMOTE_DIR = "/home/ubuntu/jarvis"
-        APP_PORT = "8000"
     }
     
     stages {
-        stage('Clone Repository') {
+        stage('Test SSH Connection') {
             steps {
-                echo 'Cloning repository from GitHub...'
-                git url: 'https://github.com/dalvipiyush07/Jarvis-Desktop-Voice-Assistant.git', 
-                    branch: 'main'
-            }
-        }
-        
-        stage('Verify Files') {
-            steps {
-                echo 'Verifying project files...'
-                sh '''
-                    echo "=== Current Directory ==="
-                    pwd
-                    echo "=== All Files ==="
-                    ls -la
-                    echo "=== Python Files ==="
-                    find . -name "*.py" | head -10
-                '''
-            }
-        }
-        
-        stage('Deploy to Server') {
-            steps {
-                echo 'Deploying files to remote server...'
+                echo 'Testing SSH connection to remote server...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        echo "Creating remote directory..."
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "mkdir -p ${REMOTE_DIR} && rm -rf ${REMOTE_DIR}/*" || true
-                        
-                        echo "Copying ALL files..."
-                        scp -o StrictHostKeyChecking=no -r ./* ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/ || echo "SCP completed"
-                        
-                        echo "✅ Files deployed successfully"
-                    """
-                }
-            }
-        }
-        
-        stage('Setup Virtual Display') {
-            steps {
-                echo 'Setting up virtual display on remote server...'
-                sshagent(credentials: ['jarvis-key']) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
-                            # Install Xvfb if not present
-                            if ! command -v Xvfb > /dev/null 2>&1; then
-                                echo "Installing Xvfb..."
-                                sudo apt-get update -qq
-                                sudo apt-get install -y -qq xvfb x11-utils
-                            fi
-                            
-                            # Start Xvfb if not running
-                            if ! pgrep -f "Xvfb :99" > /dev/null; then
-                                echo "Starting Xvfb on display :99..."
-                                pkill -f "Xvfb" || true
-                                nohup Xvfb :99 -screen 0 1024x768x16 > /dev/null 2>&1 &
-                                sleep 3
-                            fi
-                            
-                            echo "✓ Virtual display setup completed"
-                        '
-                    """
-                }
-            }
-        }
-        
-        stage('Install System Dependencies') {
-            steps {
-                echo 'Installing system dependencies for pyaudio...'
-                sshagent(credentials: ['jarvis-key']) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
-                            echo "=== Installing System Dependencies ==="
-                            sudo apt-get update -qq
-                            sudo apt-get install -y -qq \\
-                                python3-dev \\
-                                portaudio19-dev \\
-                                libasound2-dev \\
-                                libjack-dev \\
-                                libpulse-dev \\
-                                build-essential \\
-                                gcc \\
-                                g++ \\
-                                alsa-utils \\
-                                libportaudio2 \\
-                                python3-pip \\
-                                python3-venv
-                            
-                            echo "✅ System dependencies installed"
-                        '
-                    """
-                }
-            }
-        }
-        
-        stage('Setup Python Environment') {
-            steps {
-                echo 'Setting up Python environment on remote server...'
-                sshagent(credentials: ['jarvis-key']) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
-                            set -e
-                            cd ${REMOTE_DIR}
-                            
-                            echo '=== Checking for virtual environments ==='
-                            ls -la | grep venv || true
-                            
-                            # Remove any existing venv directories
-                            rm -rf venv .venv
-                            
-                            # Create fresh venv
-                            echo '=== Creating fresh virtual environment ==='
-                            python3 -m venv venv
-                            
-                            # Activate and install
-                            . venv/bin/activate
-                            
-                            echo '=== Installing packages ==='
-                            pip install --upgrade pip
-                            pip install setuptools wheel
-                            
-                            # Install PyAudio using the correct method for Ubuntu
-                            echo '=== Installing PyAudio ==='
-                            pip install pyaudio
-                            
-                            # If PyAudio fails, try alternative installation
-                            if ! python3 -c 'import pyaudio' 2>/dev/null; then
-                                echo 'PyAudio failed, trying alternative installation...'
-                                # Build from source
-                                pip install --no-cache-dir pyaudio
-                            fi
-                            
-                            # Then install other requirements
-                            echo '=== Installing other packages ==='
-                            pip install -r requirements.txt
-                            
-                            # Verify installation
-                            echo '=== Verifying installations ==='
-                            python3 -c \\\"import speech_recognition, pyttsx3, requests; print('SUCCESS: Core imports working')\\\"
-                            
-                            # Check PyAudio separately
-                            if python3 -c 'import pyaudio' 2>/dev/null; then
-                                echo 'SUCCESS: PyAudio import working'
-                            else
-                                echo 'WARNING: PyAudio not working, but continuing deployment'
-                            fi
-                            
-                            echo 'PyAutoGUI will be verified during application startup'
-                            
-                            echo '✅ Environment setup completed'
+                        echo "=== Testing basic SSH connection ==="
+                        ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${REMOTE_USER}@${REMOTE_HOST} "
+                            echo 'SSH connection successful!'
+                            echo 'Server: \\$(hostname)'
+                            echo 'IP: \\$(hostname -I)'
+                            echo 'Disk space:'
+                            df -h /
+                            echo 'Memory:'
+                            free -h
                         "
                     """
                 }
             }
         }
         
-        stage('Stop Existing App') {
+        stage('Check Server Status') {
             steps {
-                echo 'Stopping existing application...'
+                echo 'Checking server status...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
-                            set +e
-                            sudo pkill -f "python.*main.py" || true
-                            sudo pkill -f "python.*jarvis" || true
-                            sleep 2
-                            sudo pkill -9 -f "python.*main.py" || true
-                            echo "✓ Cleaned up existing processes"
-                            set -e
-                        '
-                    """
-                }
-            }
-        }
-        
-        stage('Start Application') {
-            steps {
-                echo 'Starting Jarvis application...'
-                sshagent(credentials: ['jarvis-key']) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
-                            set -e
-                            cd ${REMOTE_DIR}
-                            
-                            export DISPLAY=:99
-                            . venv/bin/activate
-                            
-                            # Configure PyAutoGUI and verify it works
-                            echo "=== Verifying PyAutoGUI with display ==="
-                            python3 -c "import pyautogui; pyautogui.FAILSAFE = False; print('PyAutoGUI configured and verified')"
-                            
-                            # Start application (even if PyAudio might have issues)
-                            echo "Starting Jarvis..."
-                            nohup python3 main.py > jarvis.log 2>&1 &
-                            
-                            sleep 5
-                            
-                            # Check if running
-                            if pgrep -f "python.*main.py" > /dev/null; then
-                                echo "✅ Jarvis started successfully"
-                                echo "PID: \$(pgrep -f 'python.*main.py')"
-                            else
-                                echo "❌ Failed to start Jarvis"
-                                echo "=== Logs ==="
-                                tail -20 jarvis.log || true
-                                exit 1
-                            fi
-                        '
-                    """
-                }
-            }
-        }
-        
-        stage('Verify Deployment') {
-            steps {
-                echo 'Verifying deployment...'
-                sshagent(credentials: ['jarvis-key']) {
-                    sh """
-                        sleep 10
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
-                            echo '=== Verification ==='
-                            if pgrep -f 'python.*main.py' > /dev/null; then
-                                echo '✅ Jarvis is RUNNING'
-                                echo 'PID: \$(pgrep -f \"python.*main.py\")'
-                                echo '=== Recent Logs ==='
-                                tail -10 ${REMOTE_DIR}/jarvis.log || true
-                            else
-                                echo '❌ Jarvis is NOT running'
-                                echo '=== Full Logs ==='
-                                cat ${REMOTE_DIR}/jarvis.log || true
-                                exit 1
-                            fi
+                            echo '=== Server Status ==='
+                            echo 'Uptime: \\$(uptime)'
+                            echo 'Running processes:'
+                            ps aux | grep python || echo 'No Python processes running'
+                            echo 'Current directory: \\$(pwd)'
+                            ls -la /home/ubuntu/ || echo 'No ubuntu home directory'
                         "
                     """
                 }
@@ -250,11 +47,8 @@ pipeline {
     }
     
     post {
-        success {
-            echo '🎉 DEPLOYMENT SUCCESSFUL! Jarvis is running on remote server.'
-        }
-        failure {
-            echo '❌ DEPLOYMENT FAILED! Check logs above.'
+        always {
+            echo '=== Connection test completed ==='
         }
     }
 }
