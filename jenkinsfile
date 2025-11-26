@@ -68,6 +68,15 @@ pipeline {
                             sudo apt-get update -qq
                             sudo apt-get install -y -qq xvfb python3-venv python3-pip portaudio19-dev
                             
+                            echo "=== Fixing TTS voice issue ==="
+                            sudo apt-get install -y espeak espeak-data
+                            
+                            echo "=== Verifying espeak installation ==="
+                            espeak --version || echo "espeak installation check failed"
+                            
+                            echo "=== Checking available voices ==="
+                            espeak --voices | head -5 || echo "Voice listing failed"
+                            
                             echo "=== Setting up virtual display ==="
                             # Check if Xvfb is already running, if not start it
                             if ! pgrep -x "Xvfb" > /dev/null; then
