@@ -97,7 +97,9 @@ pipeline {
                             pip install pyaudio || echo "pyaudio install failed - continuing"
                             
                             echo "=== Verifying core imports ==="
-                            python3 -c "import requests, pyttsx3, speech_recognition; print('SUCCESS: Core imports working')"
+                            python3 -c "import requests; print('SUCCESS: requests imported')"
+                            python3 -c "import pyttsx3; print('SUCCESS: pyttsx3 imported')"
+                            python3 -c "import speech_recognition; print('SUCCESS: speech_recognition imported')"
                             
                             echo "Environment setup completed"
                         '
@@ -114,7 +116,6 @@ pipeline {
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                             echo "=== Stopping existing processes ==="
                             set +e
-                            # Only kill processes owned by current user
                             pkill -f "python.*main.py" || echo "No existing process found"
                             sleep 2
                             pkill -9 -f "python.*main.py" || echo "No process to kill"
