@@ -127,7 +127,7 @@ pipeline {
             }
         }
         
-        stage('Debug Remote') {
+        stage('Debug Remote - FIXED') {
             steps {
                 echo "Debugging remote environment..."
                 sshagent(['jarvis-key']) {
@@ -144,7 +144,9 @@ pipeline {
                             
                             echo '=== Testing Python Import ==='
                             . venv/bin/activate
-                            python3 -c '
+                            
+                            # FIX: Python code file मध्ये लिहा आणि run करा
+                            cat > test_import.py << 'EOF'
 import os
 import sys
 print(\"Python path:\", sys.path)
@@ -154,6 +156,7 @@ try:
     # Headless environment साठी pyautogui configure करा
     import pyautogui
     pyautogui.FAILSAFE = False
+    print(\"PyAutoGUI configured successfully\")
 except Exception as e:
     print(\"PyAutoGUI config warning:\", str(e))
 
@@ -163,7 +166,10 @@ try:
 except Exception as e:
     print(\"ERROR: Jarvis import failed -\", str(e))
     sys.exit(1)
-                            '
+EOF
+
+                            python3 test_import.py
+                            rm -f test_import.py
                         "
                     """
                 }
@@ -206,17 +212,25 @@ except Exception as e:
                             # Virtual environment activate करा
                             . venv/bin/activate
                             
-                            # Headless mode साठी pyautogui configure करा
-                            python3 -c '
+                            # Headless mode साठी configuration file create करा
+                            cat > headless_config.py << 'EOF'
 import os
-if \"DISPLAY\" not in os.environ:
-    os.environ[\"DISPLAY\"] = \":99\"
+import sys
+
+# Headless environment configuration
+if 'DISPLAY' not in os.environ:
+    os.environ['DISPLAY'] = ':99'
+
 try:
     import pyautogui
     pyautogui.FAILSAFE = False
-except:
-    pass
-                            '
+    print(\"PyAutoGUI configured for headless mode\")
+except Exception as e:
+    print(\"PyAutoGUI configuration warning:\", str(e))
+EOF
+
+                            # Configuration import करा
+                            python3 headless_config.py
                             
                             echo 'Starting Jarvis application...'
                             # Background मध्ये start करा
@@ -234,6 +248,8 @@ except:
                                 cat jarvis.log || true
                                 exit 1
                             fi
+                            
+                            rm -f headless_config.py
                         "
                     """
                 }
@@ -274,10 +290,18 @@ except:
                             # Application responsive आहे का तपासा
                             echo '3. Application health check:'
                             . venv/bin/activate
-                            python3 -c '
-import Jarvis.jarvis
-print(\"   ✓ Jarvis module loaded successfully\")
-                            '
+                            
+                            cat > health_check.py << 'EOF'
+try:
+    import Jarvis.jarvis
+    print(\"   ✓ Jarvis module loaded successfully\")
+except Exception as e:
+    print(\"   ✗ Jarvis module load failed:\", str(e))
+    exit(1)
+EOF
+
+                            python3 health_check.py
+                            rm -f health_check.py
                             
                             echo '✓ All verification checks passed'
                         "
