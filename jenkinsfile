@@ -2,7 +2,7 @@ pipeline {
     agent any
     
     environment {
-        REMOTE_HOST = "52.66.252.230"
+        REMOTE_HOST = "13.204.143.16"
         REMOTE_USER = "ubuntu"
         REMOTE_DIR = "/home/ubuntu/jarvis"
         APP_PORT = "8000"
@@ -112,60 +112,26 @@ pipeline {
                             set -e
                             cd \${REMOTE_DIR}
                             
-                            echo "=== Remote Directory Contents ==="
-                            pwd
-                            ls -la
+                            echo "=== Checking for virtual environments ==="
+                            ls -la | grep venv
                             
-                            # Create requirements.txt
-                            echo "Creating requirements.txt..."
-                            cat > requirements.txt << "EOF"
-pyautogui
-speechrecognition
-pyaudio
-pyttsx3
-requests
-selenium
-beautifulsoup4
-pygame
-EOF
-                            echo "✓ requirements.txt created"
+                            # Remove any existing venv directories
+                            rm -rf venv .venv
                             
-                            # Set display
-                            export DISPLAY=:99
-                            
-                            # Remove old venv
-                            rm -rf venv
-                            
-                            # Create and setup virtual environment
+                            # Create fresh venv
+                            echo "=== Creating fresh virtual environment ==="
                             python3 -m venv venv
+                            
+                            # Activate and install
                             . venv/bin/activate
                             
-                            pip install --upgrade pip
-                            pip install wheel setuptools
-                            
                             echo "=== Installing packages ==="
+                            pip install --upgrade pip
+                            pip install -r requirements.txt
                             
-                            # Install pyaudio FIRST with specific flags
-                            echo "Installing pyaudio..."
-                            pip install pyaudio || {
-                                echo "Trying alternative pyaudio build..."
-                                pip install --global-option="build_ext" --global-option="-I/usr/include" pyaudio
-                            }
-                            
-                            # Install other packages
-                            echo "Installing other packages..."
-                            pip install pyautogui speechrecognition pyttsx3 requests selenium beautifulsoup4 pygame
-                            
-                            # Final verification - FIXED: Remove emoji
+                            # Verify installation
                             echo "=== Verifying installations ==="
-                            python3 -c "
-import pyautogui
-import speech_recognition
-import pyaudio
-import pyttsx3
-import requests
-print('SUCCESS: ALL imports successful')
-                            "
+                            python3 -c "import pyautogui, speech_recognition, pyaudio, pyttsx3, requests; print('SUCCESS: ALL imports working')"
                             
                             echo "✅ Environment setup completed"
                         '
