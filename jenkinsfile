@@ -7,48 +7,14 @@ pipeline {
     }
     
     stages {
-        stage('Test SSH Connection') {
+        stage('Test Connection') {
             steps {
-                echo 'Testing SSH connection to remote server...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        echo "=== Testing basic SSH connection ==="
-                        ssh -o StrictHostKeyChecking=no -o ConnectTimeout=30 ${REMOTE_USER}@${REMOTE_HOST} "
-                            echo 'SSH connection successful!'
-                            echo 'Server: \\$(hostname)'
-                            echo 'IP: \\$(hostname -I)'
-                            echo 'Disk space:'
-                            df -h /
-                            echo 'Memory:'
-                            free -h
-                        "
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "echo 'Connection successful'"
                     """
                 }
             }
-        }
-        
-        stage('Check Server Status') {
-            steps {
-                echo 'Checking server status...'
-                sshagent(credentials: ['jarvis-key']) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
-                            echo '=== Server Status ==='
-                            echo 'Uptime: \\$(uptime)'
-                            echo 'Running processes:'
-                            ps aux | grep python || echo 'No Python processes running'
-                            echo 'Current directory: \\$(pwd)'
-                            ls -la /home/ubuntu/ || echo 'No ubuntu home directory'
-                        "
-                    """
-                }
-            }
-        }
-    }
-    
-    post {
-        always {
-            echo '=== Connection test completed ==='
         }
     }
 }
