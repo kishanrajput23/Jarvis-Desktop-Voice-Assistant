@@ -117,9 +117,17 @@ pipeline {
                             set -e
                             cd '${REMOTE_DIR}'
                             
+                            echo "=== Setting up X11 authentication ==="
+                            # Fix Xauthority issue
+                            touch ~/.Xauthority
+                            xauth generate :99 . trusted
+                            
                             echo "=== Starting Jarvis ==="
                             export DISPLAY=:99
                             . venv/bin/activate
+                            
+                            # Configure PyAutoGUI to avoid X11 issues
+                            python3 -c "import pyautogui; pyautogui._pyautogui_x11 = None; print(\\\"PyAutoGUI configured\\\")"
                             
                             # Start the application
                             nohup python3 main.py > jarvis.log 2>&1 &
