@@ -127,23 +127,23 @@ with open('Jarvis/jarvis.py', 'r') as f:
 
 # Replace the TTS initialization part
 old_init = '''engine = pyttsx3.init()
-voices = engine.getProperty(\\'voices\\')
-engine.setProperty(\\'voice\\', voices[1].id)  
-engine.setProperty(\\'rate\\', 150)
-engine.setProperty(\\'volume\\', 1)'''
+voices = engine.getProperty('voices')
+engine.setProperty('voice', voices[1].id)  
+engine.setProperty('rate', 150)
+engine.setProperty('volume', 1)'''
 
 new_init = '''# Fixed TTS initialization with error handling
 try:
     engine = pyttsx3.init()
-    voices = engine.getProperty(\\'voices\\')
+    voices = engine.getProperty('voices')
     if voices and len(voices) > 1:
-        engine.setProperty(\\'voice\\', voices[1].id)  
+        engine.setProperty('voice', voices[1].id)  
     elif voices:
-        engine.setProperty(\\'voice\\', voices[0].id)
+        engine.setProperty('voice', voices[0].id)
     else:
         print("Warning: No TTS voices available")
-    engine.setProperty(\\'rate\\', 150)
-    engine.setProperty(\\'volume\\', 1)
+    engine.setProperty('rate', 150)
+    engine.setProperty('volume', 1)
     print("TTS engine initialized successfully")
 except Exception as e:
     print(f"TTS initialization failed: {e}")
