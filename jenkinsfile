@@ -1,0 +1,215 @@
+pipeline {
+    agent any
+
+    environment {
+        REMOTE_HOST = "13.204.143.16"
+        REMOTE_USER = "ubuntu"
+        REMOTE_DIR  = "/home/ubuntu/jarvis"
+        APP_PORT    = "5000"
+        CRED_ID     = "jarvis-key"   // Jenkins credentials id (SSH private key)
+    }
+
+    stages {
+        stage('Checkout') {
+            steps {
+                echo "Cloning repository..."
+                checkout([$class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/dalvipiyush07/Jarvis-Desktop-Voice-Assistant.git']]
+                ])
+            }
+        }
+
+        stage('Verify Files') {
+            steps {
+                echo "Verifying repo files..."
+                sh '''
+                  ls -la
+                  echo "Check for possible entrypoints:"
+                  test -f wsgi.py && echo "✓ wsgi.py" || true
+                  test -f main.py && echo "✓ main.py" || true
+                  test -f app.py && echo "✓ app.py" || true
+                  test -f requirements.txt && echo "✓ requirements.txt" || echo "✗ requirements.txt missing"
+                '''
+            }
+        }
+
+        stage('Code Quality') {
+            steps {
+                echo "Running quick code-lint (non-failing)..."
+                sh '''
+                  python3 -m pip install --user flake8 || true
+                  python3 -m flake8 --max-line-length=120 || true
+                  echo "Code quality check done (non-blocking)."
+                '''
+            }
+        }
+
+        stage('Package & Transfer') {
+            steps {
+                echo "Packaging workspace and transferring to remote..."
+                sshagent(credentials: [env.CRED_ID]) {
+                    sh """
+                      # create a tarball of workspace (exclude .git to reduce size)
+                      tar --exclude='.git' -czf workspace.tar.gz .
+                      # ensure remote dir exists
+                      ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'mkdir -p ${REMOTE_DIR}'
+                      # stream tarball and extract atomically on remote
+                      cat workspace.tar.gz | ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'tar -xzf - -C ${REMOTE_DIR}'
+                      rm -f workspace.tar.gz
+                      echo "Files transferred to ${REMOTE_HOST}:${REMOTE_DIR}"
+                    """
+                }
+            }
+        }
+
+        stage('Setup remote venv & deps') {
+            steps {
+                echo "Creating virtualenv and installing requirements on remote..."
+                sshagent(credentials: [env.CRED_ID]) {
+                    sh """
+                      ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
+                        set -e
+                        cd ${REMOTE_DIR}
+                        # ensure python3 exists
+                        command -v python3 >/dev/null 2>&1 || { echo "python3 not found"; exit 1; }
+                        # remove old venv to ensure clean env
+                        if [ -d "venv" ]; then rm -rf venv; fi
+                        python3 -m venv venv
+                        . venv/bin/activate
+                        pip install --upgrade pip setuptools wheel || true
+                        if [ -f requirements.txt ]; then
+                          pip install -r requirements.txt || true
+                        else
+                          echo "No requirements.txt found, skipping pip install"
+                        fi
+                        echo "Virtualenv ready"
+                      '
+                    """
+                }
+            }
+        }
+
+        stage('Stop existing service / process') {
+            steps {
+                echo "Stopping existing service or python processes if any..."
+                sshagent(credentials: [env.CRED_ID]) {
+                    sh """
+                      ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
+                        set -e
+                        # Prefer systemd service if exists
+                        if systemctl --quiet status jarvis; then
+                          echo "Stopping systemd service jarvis..."
+                          sudo systemctl stop jarvis || true
+                        else
+                          echo "No jarvis systemd service detected; killing python app processes if present..."
+                          pkill -f "python.*(main|app|wsgi)" || true
+                        fi
+                        sleep 2
+                      '
+                    """
+                }
+            }
+        }
+
+        stage('Start application') {
+            steps {
+                echo "Starting application on remote..."
+                sshagent(credentials: [env.CRED_ID]) {
+                    sh """
+                      ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
+                        set -e
+                        cd ${REMOTE_DIR}
+                        . venv/bin/activate
+
+                        # Preferred: if systemd service exists, use it (will use unit created earlier)
+                        if [ -f /etc/systemd/system/jarvis.service ] || systemctl list-unit-files | grep -q jarvis; then
+                          echo "Using systemd to start jarvis service..."
+                          sudo systemctl daemon-reload || true
+                          sudo systemctl start jarvis || sudo systemctl restart jarvis || true
+                        else
+                          # fallback: start via nohup
+                          echo "Starting via nohup python (fallback)..."
+                          nohup python3 -u main.py > app.log 2>&1 & || nohup python3 -u app.py > app.log 2>&1 &
+                        fi
+
+                        sleep 3
+                        echo "Start attempted."
+                      '
+                    """
+                }
+            }
+        }
+
+        stage('Verify') {
+            steps {
+                echo "Verifying application on remote..."
+                sshagent(credentials: [env.CRED_ID]) {
+                    sh """
+                      ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
+                        set -e
+                        # check process
+                        if pgrep -f "python.*(main|app|wsgi)" >/dev/null 2>&1 || systemctl --quiet is-active jarvis; then
+                          echo "✓ Process/service running"
+                        else
+                          echo "✗ No running process/service found" ; exit 1
+                        fi
+
+                        # port listen check (netstat or ss)
+                        if ss -tuln | grep -q ":${APP_PORT}"; then
+                          echo "✓ Port ${APP_PORT} is listening"
+                        elif netstat -tuln | grep -q ":${APP_PORT}"; then
+                          echo "✓ Port ${APP_PORT} is listening (netstat)"
+                        else
+                          echo "✗ Port ${APP_PORT} not listening" ; exit 1
+                        fi
+
+                        # HTTP check (local curl)
+                        if curl -sSf http://127.0.0.1:${APP_PORT}/ >/dev/null 2>&1; then
+                          echo "✓ HTTP health-check passed"
+                        else
+                          echo "✗ HTTP health-check failed — showing last logs"; tail -n 200 ${REMOTE_DIR}/app.log || true; exit 1
+                        fi
+                      '
+                    """
+                }
+            }
+        }
+
+        stage('Display info') {
+            steps {
+                echo "Displaying remote app info and last logs..."
+                sshagent(credentials: [env.CRED_ID]) {
+                    sh """
+                      ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
+                        echo "==== APP INFO ===="
+                        echo "URL: http://${REMOTE_HOST}:${APP_PORT}"
+                        echo "Remote dir: ${REMOTE_DIR}"
+                        echo "PID(s):"; pgrep -af "python.*(main|app|wsgi)" || echo "N/A"
+                        echo "---- Last 40 lines of app.log ----"
+                        tail -n 40 ${REMOTE_DIR}/app.log || echo "No logs"
+                        echo "==================="
+                      '
+                    """
+                }
+            }
+        }
+    }
+
+    post {
+        success {
+            echo "✅ Deployment finished: http://${env.REMOTE_HOST}:${env.APP_PORT}"
+        }
+        failure {
+            echo "❌ Deployment failed — collecting remote logs..."
+            sshagent(credentials: [env.CRED_ID]) {
+                sh """
+                  ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} 'echo \"---- remote last 200 lines of app.log ----\"; tail -n 200 ${REMOTE_DIR}/app.log || echo \"No app.log\"' || true
+                """
+            }
+        }
+        always {
+            echo "Pipeline run complete."
+        }
+    }
+}
