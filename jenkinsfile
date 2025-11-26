@@ -37,8 +37,7 @@ pipeline {
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
                         echo "Creating remote directory..."
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} \\
-                            "mkdir -p ${REMOTE_DIR} && rm -rf ${REMOTE_DIR}/*" || true
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "mkdir -p ${REMOTE_DIR} && rm -rf ${REMOTE_DIR}/*" || true
                         
                         echo "Copying ALL files..."
                         scp -o StrictHostKeyChecking=no -r ./* ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/ || echo "SCP completed"
@@ -108,33 +107,33 @@ pipeline {
                 echo 'Setting up Python environment on remote server...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
                             set -e
                             cd ${REMOTE_DIR}
                             
-                            echo "=== Checking for virtual environments ==="
+                            echo '=== Checking for virtual environments ==='
                             ls -la | grep venv || true
                             
                             # Remove any existing venv directories
                             rm -rf venv .venv
                             
                             # Create fresh venv
-                            echo "=== Creating fresh virtual environment ==="
+                            echo '=== Creating fresh virtual environment ==='
                             python3 -m venv venv
                             
                             # Activate and install
                             . venv/bin/activate
                             
-                            echo "=== Installing packages ==="
+                            echo '=== Installing packages ==='
                             pip install --upgrade pip
                             pip install -r requirements.txt
                             
-                            # Verify installation with proper quotes
-                            echo "=== Verifying installations ==="
-                            python3 -c "import pyautogui, speech_recognition, pyaudio, pyttsx3, requests; print('SUCCESS: ALL imports working')"
+                            # Verify installation - FIXED QUOTES
+                            echo '=== Verifying installations ==='
+                            python3 -c \\\"import pyautogui, speech_recognition, pyaudio, pyttsx3, requests; print('SUCCESS: ALL imports working')\\\"
                             
-                            echo "✅ Environment setup completed"
-                        '
+                            echo '✅ Environment setup completed'
+                        "
                     """
                 }
             }
