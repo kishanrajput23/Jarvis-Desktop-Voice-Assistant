@@ -128,11 +128,10 @@ pipeline {
                             pip install --upgrade pip
                             pip install -r requirements.txt
                             
-                            # Verify installation - Set DISPLAY before importing PyAutoGUI
+                            # Verify installation - Skip PyAutoGUI verification
                             echo '=== Verifying installations ==='
-                            export DISPLAY=:99
                             python3 -c \\\"import speech_recognition, pyaudio, pyttsx3, requests; print('SUCCESS: Core imports working')\\\"
-                            python3 -c \\\"import pyautogui; pyautogui._pyautogui_x11 = None; print('SUCCESS: PyAutoGUI import working')\\\"
+                            echo 'PyAutoGUI will be verified during application startup'
                             
                             echo '✅ Environment setup completed'
                         "
@@ -172,8 +171,9 @@ pipeline {
                             export DISPLAY=:99
                             . venv/bin/activate
                             
-                            # Configure PyAutoGUI to avoid display issues
-                            python3 -c "import pyautogui; pyautogui._pyautogui_x11 = None; pyautogui.FAILSAFE = False; print('PyAutoGUI configured')"
+                            # Configure PyAutoGUI and verify it works
+                            echo "=== Verifying PyAutoGUI with display ==="
+                            python3 -c "import pyautogui; pyautogui.FAILSAFE = False; print('PyAutoGUI configured and verified')"
                             
                             # Start application
                             echo "Starting Jarvis..."
