@@ -56,46 +56,46 @@ pipeline {
                 echo 'Setting up environment on server...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                             set -e
-                            cd ${REMOTE_DIR}
+                            cd '${REMOTE_DIR}'
                             
-                            echo '=== Checking current files on server ==='
+                            echo "=== Checking current files on server ==="
                             pwd
                             ls -la
                             
-                            echo '=== Installing system dependencies ==='
+                            echo "=== Installing system dependencies ==="
                             sudo apt-get update -qq
                             sudo apt-get install -y -qq xvfb python3-venv python3-pip portaudio19-dev
                             
-                            echo '=== Setting up virtual display ==='
+                            echo "=== Setting up virtual display ==="
                             pkill -f Xvfb || true
                             nohup Xvfb :99 -screen 0 1024x768x16 > /dev/null 2>&1 &
                             sleep 3
                             
-                            echo '=== Creating Python virtual environment ==='
+                            echo "=== Creating Python virtual environment ==="
                             rm -rf venv
                             python3 -m venv venv
                             . venv/bin/activate
                             
-                            echo '=== Installing Python packages ==='
+                            echo "=== Installing Python packages ==="
                             pip install --upgrade pip
                             
                             # Install packages individually to handle failures
-                            pip install requests || echo 'requests install failed'
-                            pip install pyttsx3 || echo 'pyttsx3 install failed'
-                            pip install SpeechRecognition || echo 'SpeechRecognition install failed'
-                            pip install pyautogui || echo 'pyautogui install failed'
-                            pip install beautifulsoup4 || echo 'beautifulsoup4 install failed'
-                            pip install wikipedia || echo 'wikipedia install failed'
-                            pip install pyjokes || echo 'pyjokes install failed'
-                            pip install pyaudio || echo 'pyaudio install failed - continuing'
+                            pip install requests || echo "requests install failed"
+                            pip install pyttsx3 || echo "pyttsx3 install failed"
+                            pip install SpeechRecognition || echo "SpeechRecognition install failed"
+                            pip install pyautogui || echo "pyautogui install failed"
+                            pip install beautifulsoup4 || echo "beautifulsoup4 install failed"
+                            pip install wikipedia || echo "wikipedia install failed"
+                            pip install pyjokes || echo "pyjokes install failed"
+                            pip install pyaudio || echo "pyaudio install failed - continuing"
                             
-                            echo '=== Verifying core imports ==='
-                            python3 -c \"import requests, pyttsx3, speech_recognition; print('✅ Core imports successful')\"
+                            echo "=== Verifying core imports ==="
+                            python3 -c "import requests, pyttsx3, speech_recognition; print('✅ Core imports successful')"
                             
-                            echo '✅ Environment setup completed'
-                        "
+                            echo "✅ Environment setup completed"
+                        '
                     """
                 }
             }
@@ -106,15 +106,15 @@ pipeline {
                 echo 'Stopping any running instances...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
-                            echo '=== Stopping existing processes ==='
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
+                            echo "=== Stopping existing processes ==="
                             set +e
-                            pkill -f 'python.*main.py' || echo 'No existing process found'
+                            pkill -f "python.*main.py" || echo "No existing process found"
                             sleep 2
-                            pkill -9 -f 'python.*main.py' || echo 'No process to kill'
+                            pkill -9 -f "python.*main.py" || echo "No process to kill"
                             set -e
-                            echo '✅ Cleanup completed'
-                        "
+                            echo "✅ Cleanup completed"
+                        '
                     """
                 }
             }
@@ -125,11 +125,11 @@ pipeline {
                 echo 'Starting Jarvis application...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                             set -e
-                            cd ${REMOTE_DIR}
+                            cd '${REMOTE_DIR}'
                             
-                            echo '=== Starting Jarvis ==='
+                            echo "=== Starting Jarvis ==="
                             export DISPLAY=:99
                             . venv/bin/activate
                             
@@ -139,19 +139,18 @@ pipeline {
                             # Wait for process to start
                             sleep 8
                             
-                            echo '=== Checking application status ==='
-                            if ps aux | grep -v grep | grep 'python.*main.py' > /dev/null; then
-                                PID=\\$(ps aux | grep -v grep | grep 'python.*main.py' | awk '{print \\$2}')
-                                echo '✅ Jarvis started successfully with PID: '\$PID
-                                echo '=== Recent logs ==='
+                            echo "=== Checking application status ==="
+                            if ps aux | grep -v grep | grep "python.*main.py" > /dev/null; then
+                                echo "✅ Jarvis started successfully"
+                                echo "=== Recent logs ==="
                                 tail -10 jarvis.log
                             else
-                                echo '❌ Jarvis failed to start'
-                                echo '=== Error logs ==='
+                                echo "❌ Jarvis failed to start"
+                                echo "=== Error logs ==="
                                 tail -20 jarvis.log
                                 exit 1
                             fi
-                        "
+                        '
                     """
                 }
             }
@@ -163,24 +162,24 @@ pipeline {
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
                         sleep 10
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "
-                            cd ${REMOTE_DIR}
-                            echo '=== Final verification ==='
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
+                            cd '${REMOTE_DIR}'
+                            echo "=== Final verification ==="
                             
-                            if ps aux | grep -v grep | grep 'python.*main.py' > /dev/null; then
-                                echo '✅ DEPLOYMENT SUCCESSFUL!'
-                                echo 'Jarvis is running on the server'
-                                echo '=== Process info ==='
-                                ps aux | grep -v grep | grep 'python.*main.py'
-                                echo '=== Latest logs ==='
+                            if ps aux | grep -v grep | grep "python.*main.py" > /dev/null; then
+                                echo "✅ DEPLOYMENT SUCCESSFUL!"
+                                echo "Jarvis is running on the server"
+                                echo "=== Process info ==="
+                                ps aux | grep -v grep | grep "python.*main.py"
+                                echo "=== Latest logs ==="
                                 tail -5 jarvis.log
                             else
-                                echo '❌ Jarvis is not running'
-                                echo '=== Checking logs for errors ==='
+                                echo "❌ Jarvis is not running"
+                                echo "=== Checking logs for errors ==="
                                 tail -30 jarvis.log
                                 exit 1
                             fi
-                        "
+                        '
                     """
                 }
             }
