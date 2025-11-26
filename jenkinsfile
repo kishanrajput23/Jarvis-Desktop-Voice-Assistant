@@ -124,12 +124,46 @@ pipeline {
                     sh """
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                             set -e
-                            cd '${REMOTE_DIR}'
+                            cd ${REMOTE_DIR}
                             
                             echo "=== Setting up X11 authentication ==="
                             # Fix Xauthority issue
                             touch ~/.Xauthority
                             xauth generate :99 . trusted
+                            
+                            echo "=== Patching TTS issue in jarvis.py ==="
+                            # Create a backup of jarvis.py
+                            cp Jarvis/jarvis.py Jarvis/jarvis.py.backup
+                            
+                            # Apply patch to handle TTS voice selection
+                            python3 -c "
+import re
+
+with open('Jarvis/jarvis.py', 'r') as f:
+    content = f.read()
+
+# Replace the pyttsx3 initialization with error handling
+old_code = 'engine = pyttsx3.init()'
+new_code = '''try:
+    engine = pyttsx3.init()
+    # Get available voices and use first one
+    voices = engine.getProperty(\\\"voices\\\")
+    if voices:
+        engine.setProperty(\\\"voice\\\", voices[0].id)
+        print(f\\\"Using TTS voice: {voices[0].id}\\\")
+    else:
+        print(\\\"Warning: No TTS voices available\\\")
+except Exception as e:
+    print(f\\\"TTS initialization failed: {e}\\\")
+    engine = None'''
+
+content = content.replace(old_code, new_code)
+
+with open('Jarvis/jarvis.py', 'w') as f:
+    f.write(content)
+
+print(\\\"TTS patch applied successfully\\\")
+"
                             
                             echo "=== Starting Jarvis ==="
                             export DISPLAY=:99
