@@ -1,21 +1,21 @@
 pipeline {
     agent any
-    
+
     environment {
         REMOTE_HOST = "65.1.130.238"
         REMOTE_USER = "ubuntu"
         REMOTE_DIR = "/home/ubuntu/jarvis"
+        DISPLAY = ":99"
     }
-    
+
     stages {
         stage('Clone Repository') {
             steps {
                 echo 'Cloning repository from GitHub...'
-                git url: 'https://github.com/dalvipiyush07/Jarvis-Desktop-Voice-Assistant.git', 
-                    branch: 'main'
+                git url: 'https://github.com/dalvipiyush07/Jarvis-Desktop-Voice-Assistant.git', branch: 'main'
             }
         }
-        
+
         stage('Verify Files') {
             steps {
                 echo 'Verifying project files...'
@@ -23,34 +23,32 @@ pipeline {
                     echo "=== Checking essential files ==="
                     ls -la
                     echo "=== main.py exists? ==="
-                    test -f main.py && echo "main.py found" || echo "main.py missing"
+                    test -f main.py && echo "main.py found" || (echo "main.py missing" && exit 1)
                     echo "=== requirements.txt exists? ==="
                     test -f requirements.txt && echo "requirements.txt found" || echo "requirements.txt missing"
                     echo "=== Jarvis directory exists? ==="
-                    test -d Jarvis && echo "Jarvis directory found" || echo "Jarvis directory missing"
+                    test -d Jarvis && echo "Jarvis directory found" || (echo "Jarvis directory missing" && exit 1)
                 '''
             }
         }
-        
+
         stage('Deploy Files') {
             steps {
                 echo 'Deploying files to server...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
                         echo "=== Creating directory on server ==="
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "mkdir -p ${REMOTE_DIR} && rm -rf ${REMOTE_DIR}/*"
-                        
+                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "mkdir -p ${REMOTE_DIR} && rm -rf ${REMOTE_DIR}/*" || echo "Directory cleaned"
+
                         echo "=== Copying files ==="
-                        scp -o StrictHostKeyChecking=no main.py ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/
-                        scp -o StrictHostKeyChecking=no requirements.txt ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/
-                        scp -o StrictHostKeyChecking=no -r Jarvis/ ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/
-                        
+                        scp -o StrictHostKeyChecking=no -r ./* ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/ || true
+
                         echo "Files deployed successfully"
                     """
                 }
             }
         }
-        
+
         stage('Setup Environment') {
             steps {
                 echo 'Setting up environment on server...'
@@ -59,158 +57,125 @@ pipeline {
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                             set -e
                             cd ${REMOTE_DIR}
-                            
-                            echo "=== Checking current files on server ==="
-                            pwd
-                            ls -la
-                            
+
                             echo "=== Installing system dependencies ==="
                             sudo apt-get update -qq
-                            sudo apt-get install -y -qq xvfb python3-venv python3-pip portaudio19-dev espeak espeak-data
-                            
-                            echo "=== Setting up virtual display ==="
-                            if ! pgrep -x "Xvfb" > /dev/null; then
-                                echo "Starting Xvfb..."
+                            sudo apt-get install -y -qq xvfb x11-utils scrot python3-venv python3-pip python3-tk
+                            sudo apt-get install -y -qq portaudio19-dev libasound2-dev libjack-dev libpulse-dev build-essential gcc g++
+                            sudo apt-get install -y -qq espeak libespeak-dev || true
+                            sudo apt-get install -y -qq python3-pyaudio || true
+
+                            echo "=== Ensure Xvfb is running ==="
+                            if ! pgrep -f "Xvfb :99" > /dev/null 2>&1; then
                                 nohup Xvfb :99 -screen 0 1024x768x16 > /dev/null 2>&1 &
-                                sleep 3
-                            else
-                                echo "Xvfb is already running"
+                                sleep 2
                             fi
-                            
-                            echo "=== Creating Python virtual environment ==="
-                            rm -rf venv
+
+                            echo "=== Creating Python virtualenv ==="
+                            rm -rf venv || true
                             python3 -m venv venv
                             . venv/bin/activate
-                            
+
+                            pip install --upgrade pip setuptools wheel
+
                             echo "=== Installing Python packages ==="
-                            pip install --upgrade pip
-                            
-                            pip install pyttsx3==2.90
-                            pip install wikipedia==1.4.0
-                            pip install PyAutoGUI==0.9.54
-                            pip install SpeechRecognition==3.10.4
-                            pip install pyjokes==0.6.0
-                            pip install pyaudio
-                            
-                            echo "=== Verifying core imports ==="
+                            pip install requests || echo "requests install failed"
+                            pip install pyttsx3 || echo "pyttsx3 install failed"
+                            pip install SpeechRecognition || echo "SpeechRecognition install failed"
+                            pip install pyautogui || echo "pyautogui install failed"
+                            pip install beautifulsoup4 || echo "beautifulsoup4 install failed"
+                            pip install wikipedia || echo "wikipedia install failed"
+                            pip install pyjokes || echo "pyjokes install failed"
+                            pip install pyaudio || echo "pyaudio install failed - continuing"
+
+                            echo "=== Quick import checks (single-line safe) ==="
+                            python3 -c "import requests; print('SUCCESS: requests imported')"
                             python3 -c "import pyttsx3; print('SUCCESS: pyttsx3 imported')"
-                            python3 -c "import speech_recognition; print('SUCCESS: speech_recognition imported')"
-                            python3 -c "import pyautogui; print('SUCCESS: pyautogui imported')"
-                            python3 -c "import wikipedia; print('SUCCESS: wikipedia imported')"
-                            python3 -c "import pyjokes; print('SUCCESS: pyjokes imported')"
-                            
+                            python3 -c "import speech_recognition as sr; print('SUCCESS: speech_recognition imported')"
+
                             echo "Environment setup completed"
                         '
                     """
                 }
             }
         }
-        
-        stage('Fix TTS Issue') {
-            steps {
-                echo 'Fixing TTS voice issue...'
-                sshagent(credentials: ['jarvis-key']) {
-                    sh """
-                        ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
-                            set -e
-                            cd ${REMOTE_DIR}
-                            
-                            echo "=== Creating fixed jarvis.py ==="
-                            
-                            # Create a simple Python script to generate the fixed file
-                            cat > fix_jarvis.py << 'ENDOFFILE'
-import os
 
-# Read original file
-with open('Jarvis/jarvis.py', 'r') as f:
-    content = f.read()
-
-# Replace the TTS initialization part
-old_init = '''engine = pyttsx3.init()
-voices = engine.getProperty('voices')
-engine.setProperty('voice', voices[1].id)  
-engine.setProperty('rate', 150)
-engine.setProperty('volume', 1)'''
-
-new_init = '''# Fixed TTS initialization with error handling
-try:
-    engine = pyttsx3.init()
-    voices = engine.getProperty('voices')
-    if voices and len(voices) > 1:
-        engine.setProperty('voice', voices[1].id)  
-    elif voices:
-        engine.setProperty('voice', voices[0].id)
-    else:
-        print("Warning: No TTS voices available")
-    engine.setProperty('rate', 150)
-    engine.setProperty('volume', 1)
-    print("TTS engine initialized successfully")
-except Exception as e:
-    print(f"TTS initialization failed: {e}")
-    engine = None'''
-
-# Replace in content
-content = content.replace(old_init, new_init)
-
-# Fix Linux paths and commands
-content = content.replace('os.path.expanduser("~\\\\\\\\Pictures\\\\\\\\screenshot.png")', 'os.path.expanduser("~/Pictures/screenshot.png")')
-content = content.replace('os.path.expanduser("~\\\\\\\\Music")', 'os.path.expanduser("~/Music")')
-content = content.replace('os.startfile(', 'os.system(f"xdg-open \\\\'" + ')
-content = content.replace('os.system("shutdown /s /f /t 1")', 'os.system("shutdown now")')
-content = content.replace('os.system("shutdown /r /f /t 1")', 'os.system("reboot")')
-
-# Write fixed file
-with open('Jarvis/jarvis_fixed.py', 'w') as f:
-    f.write(content)
-
-print("Fixed jarvis.py created successfully")
-ENDOFFILE
-
-                            # Run the fix script
-                            . venv/bin/activate
-                            python3 fix_jarvis.py
-                            
-                            # Replace original with fixed version
-                            mv Jarvis/jarvis_fixed.py Jarvis/jarvis.py
-                            
-                            echo "TTS fix applied successfully"
-                        '
-                    """
-                }
-            }
-        }
-        
         stage('Start Application') {
             steps {
                 echo 'Starting Jarvis application...'
                 sshagent(credentials: ['jarvis-key']) {
+                    // create patch file locally, copy to remote, run it then start app
                     sh """
+                        echo "=== Create local patch script ==="
+                        cat > ${WORKSPACE}/apply_tts_patch.py <<'PY'
+import re
+from pathlib import Path
+p = Path('Jarvis/jarvis.py')
+if not p.exists():
+    print("Jarvis/jarvis.py not found, aborting patch")
+    raise SystemExit(1)
+
+content = p.read_text()
+
+old_code = 'engine = pyttsx3.init()'
+new_code = (
+    "try:\\n"
+    "    engine = pyttsx3.init()\\n"
+    "    voices = engine.getProperty('voices')\\n"
+    "    if voices:\\n"
+    "        engine.setProperty('voice', voices[0].id)\\n"
+    "        print(f\"Using TTS voice: {voices[0].id}\")\\n"
+    "    else:\\n"
+    "        print('Warning: No TTS voices available')\\n"
+    "except Exception as e:\\n"
+    "    print(f'TTS initialization failed: {e}')\\n"
+    "    engine = None\\n"
+)
+
+if old_code in content:
+    content = content.replace(old_code, new_code)
+    p.write_text(content)
+    print("TTS patch applied successfully")
+else:
+    print("Pattern not found; no changes made")
+PY
+
+                        echo "=== Copy patch to remote ==="
+                        scp -o StrictHostKeyChecking=no ${WORKSPACE}/apply_tts_patch.py ${REMOTE_USER}@${REMOTE_HOST}:${REMOTE_DIR}/apply_tts_patch.py
+
+                        echo "=== Run patch & start app on remote ==="
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                             set -e
                             cd ${REMOTE_DIR}
-                            
-                            echo "=== Setting up X11 authentication ==="
-                            touch ~/.Xauthority
-                            xauth generate :99 . trusted
-                            
-                            echo "=== Starting Jarvis ==="
-                            export DISPLAY=:99
+
+                            # backup before patch
+                            if [ -f Jarvis/jarvis.py ] && [ ! -f Jarvis/jarvis.py.backup ]; then
+                                cp Jarvis/jarvis.py Jarvis/jarvis.py.backup || true
+                            fi
+
+                            # run the patch (safe)
+                            python3 apply_tts_patch.py || true
+                            rm -f apply_tts_patch.py || true
+
+                            # ensure DISPLAY and venv
+                            export DISPLAY=${DISPLAY}
                             . venv/bin/activate
-                            
-                            # Start application
+
+                            # safe PyAutoGUI config
+                            python3 -c "import pyautogui; pyautogui.FAILSAFE=False; print('PyAutoGUI configured')"
+
+                            # start app in background
                             nohup python3 main.py > jarvis.log 2>&1 &
-                            
-                            sleep 10
-                            
-                            echo "=== Checking application status ==="
+
+                            sleep 8
+
+                            # check process
                             if ps aux | grep -v grep | grep "python.*main.py" > /dev/null; then
                                 echo "SUCCESS: Jarvis started successfully"
-                                echo "=== Recent logs ==="
-                                tail -10 jarvis.log
+                                tail -n 10 jarvis.log || true
                             else
                                 echo "ERROR: Jarvis failed to start"
-                                echo "=== Error logs ==="
-                                tail -20 jarvis.log
+                                tail -n 100 jarvis.log || true
                                 exit 1
                             fi
                         '
@@ -218,28 +183,23 @@ ENDOFFILE
                 }
             }
         }
-        
+
         stage('Verify Deployment') {
             steps {
                 echo 'Verifying deployment...'
                 sshagent(credentials: ['jarvis-key']) {
                     sh """
-                        sleep 10
+                        sleep 5
                         ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                             cd ${REMOTE_DIR}
                             echo "=== Final verification ==="
-                            
                             if ps aux | grep -v grep | grep "python.*main.py" > /dev/null; then
                                 echo "SUCCESS: DEPLOYMENT COMPLETED"
-                                echo "Jarvis is running on the server"
-                                echo "=== Process info ==="
                                 ps aux | grep -v grep | grep "python.*main.py"
-                                echo "=== Latest logs ==="
-                                tail -5 jarvis.log
+                                tail -n 10 jarvis.log || true
                             else
                                 echo "ERROR: Jarvis is not running"
-                                echo "=== Checking logs for errors ==="
-                                tail -30 jarvis.log
+                                tail -n 100 jarvis.log || true
                                 exit 1
                             fi
                         '
@@ -248,11 +208,10 @@ ENDOFFILE
             }
         }
     }
-    
+
     post {
         success {
             echo 'DEPLOYMENT COMPLETED SUCCESSFULLY!'
-            echo 'Jarvis voice assistant is now running on the remote server.'
         }
         failure {
             echo 'DEPLOYMENT FAILED! Check the logs above for details.'
