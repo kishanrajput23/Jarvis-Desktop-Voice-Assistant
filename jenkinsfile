@@ -58,7 +58,7 @@ pipeline {
 
         stage('Package & Transfer') {
             steps {
-                echo "Creating git archive (HEAD) and transferring to remote..."
+                echo "Creating git archive (HEAD) and transferring to remote (to /home/${REMOTE_USER})..."
                 sshagent(credentials: [env.CRED_ID]) {
                     sh '''
                       set -e
@@ -70,9 +70,11 @@ pipeline {
                       # ensure remote dir exists
                       ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "mkdir -p ${REMOTE_DIR}"
 
-                      # copy archive and extract on remote atomically
-                      scp -o StrictHostKeyChecking=no "${ARCHIVE}" ${REMOTE_USER}@${REMOTE_HOST}:/tmp/ || { echo "scp failed"; exit 1; }
-                      ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "tar -xzf /tmp/$(basename ${ARCHIVE}) -C ${REMOTE_DIR} && rm -f /tmp/$(basename ${ARCHIVE})"
+                      # copy archive to remote user's home (home is writable)
+                      scp -o StrictHostKeyChecking=no "${ARCHIVE}" ${REMOTE_USER}@${REMOTE_HOST}:/home/${REMOTE_USER}/workspace-${BUILD_NUMBER}.tar.gz || { echo "scp to /home/${REMOTE_USER} failed"; exit 1; }
+
+                      # extract on remote into target directory and remove archive
+                      ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} "tar -xzf /home/${REMOTE_USER}/workspace-${BUILD_NUMBER}.tar.gz -C ${REMOTE_DIR} && rm -f /home/${REMOTE_USER}/workspace-${BUILD_NUMBER}.tar.gz"
 
                       # cleanup local archive
                       rm -f "${ARCHIVE}"
@@ -146,7 +148,7 @@ pipeline {
                           sudo systemctl start jarvis || sudo systemctl restart jarvis || true
                         else
                           echo "Starting via nohup python (fallback)..."
-                          nohup python3 -u main.py > app.log 2>&1 & || nohup python3 -u app.py > app.log 2>&1 &
+                          nohup python3 -u main.py > app.log 2>&1 & || nohup python3 -u Jarvis/jarvis.py > app.log 2>&1 &
                         fi
 
                         sleep 3
@@ -164,7 +166,7 @@ pipeline {
                     sh '''
                       ssh -o StrictHostKeyChecking=no ${REMOTE_USER}@${REMOTE_HOST} '
                         set -e
-                        if pgrep -f "python.*(main|app|wsgi)" >/dev/null 2>&1 || systemctl --quiet is-active jarvis; then
+                        if pgrep -f "python.*(main|app|wsgi|Jarvis/jarvis.py)" >/dev/null 2>&1 || systemctl --quiet is-active jarvis; then
                           echo "✓ Process/service running"
                         else
                           echo "✗ No running process/service found" ; exit 1
@@ -198,7 +200,7 @@ pipeline {
                         echo "==== APP INFO ===="
                         echo "URL: http://${REMOTE_HOST}:${APP_PORT}"
                         echo "Remote dir: ${REMOTE_DIR}"
-                        echo "PID(s):"; pgrep -af "python.*(main|app|wsgi)" || echo "N/A"
+                        echo "PID(s):"; pgrep -af "python.*(main|app|wsgi|Jarvis/jarvis.py)" || echo "N/A"
                         echo "---- Last 40 lines of app.log ----"
                         tail -n 40 ${REMOTE_DIR}/app.log || echo "No logs"
                         echo "==================="
