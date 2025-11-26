@@ -1,4 +1,4 @@
-import Jarvis.jarvis as j
+import Jarvis.jarvis
 
 if __name__ == "__main__":
-    j.start()   
+    Jarvis.jarvis.main()   
