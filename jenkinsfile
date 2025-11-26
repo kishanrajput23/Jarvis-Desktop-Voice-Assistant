@@ -280,11 +280,11 @@ print('PyAutoGUI configured for headless environment')
                                 exit 1
                             fi
                             
-                            # Check application logs for errors
+                            # Check application logs for errors - FIXED
                             echo 'Checking application logs for errors...'
-                            if tail -n 10 ${REMOTE_DIR}/jarvis.log 2>/dev/null | grep -i 'error\|exception\|traceback' > /dev/null; then
+                            if tail -n 10 ${REMOTE_DIR}/jarvis.log 2>/dev/null | grep -i \"error\\|exception\\|traceback\" > /dev/null; then
                                 echo '⚠️  Potential errors found in logs:'
-                                tail -n 20 ${REMOTE_DIR}/jarvis.log | grep -i 'error\|exception\|traceback' || true
+                                tail -n 20 ${REMOTE_DIR}/jarvis.log | grep -i \"error\\|exception\\|traceback\" || true
                             else
                                 echo '✓ No errors found in recent logs'
                             fi
