@@ -1,0 +1,20 @@
+# Claude-Powered Jarvis Voice Assistant Requirements
+
+# Anthropic Claude API
+anthropic>=0.40.0
+
+# Text-to-Speech
+pyttsx3~=2.90
+
+# Speech Recognition
+SpeechRecognition~=3.10.4
+pyaudio>=0.2.11
+
+# Information Retrieval
+wikipedia~=1.4.0
+
+# System Automation
+PyAutoGUI~=0.9.54
+
+# Environment Variables
+python-dotenv>=1.0.0
