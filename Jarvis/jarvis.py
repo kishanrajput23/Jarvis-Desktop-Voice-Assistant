@@ -18,6 +18,7 @@ engine.setProperty('volume', 1)
 def speak(audio) -> None:
     engine.say(audio)
     engine.runAndWait()
+    print("changes made in 21 line")
 
 
 def time() -> None:
