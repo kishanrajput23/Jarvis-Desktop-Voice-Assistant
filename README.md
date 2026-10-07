@@ -12,20 +12,29 @@
 
 <code><img height="30" src="https://raw.githubusercontent.com/github/explore/80688e429a7d4ef2fca1e82350fe8e3517d3494d/topics/python/python.png"></code>
 
-## 📌Features
+## 📌 Features
 
-It can do a lot of cool things, some of them being:
+Jarvis is now more powerful and bilingual! Some of its key features include:
 
-- Greet user
-- Tell current time and date
-- Launch applications/softwares
-- Open any website
-- Tells about any person (via Wikipedia)
-- Can search anything on Google
-- Plays music
-- Take important note in text file
-- Can take screenshot and save it with custom filename
-- Can tell jokes
+- **Bilingual Support (FR/EN)**: Native ability to understand and respond in both French and English.
+- **Cross-Platform**: Fully compatible with Linux (Fedora, Ubuntu/Debian) and Windows.
+- **Greet User**: Greets you based on the time of day.
+- **Time & Date**: Tells you the current time and date in the chosen language.
+- **System Control**: Restart or Shut down your system via voice commands.
+- **Web Browsing**: Open YouTube, Google, or any website.
+- **Wikipedia**: Search for information and get a voice summary.
+- **Entertainment**: Play music from your local library or tell jokes.
+- **Productivity**: Take screenshots and save notes.
+
+## 📌 Key Advantages
+
+Why choose this version of Jarvis?
+
+1.  **Seamless Bilingualism**: No need to manually switch languages. Jarvis detects the intent and adapts its voice and vocabulary dynamically.
+2.  **Linux Ready**: Optimized for modern Linux environments using `systemctl` for power management and `xdg-open` for media.
+3.  **Modular Architecture**: Built with a centralized translation system (`STRINGS` dictionary), making it extremely easy to add new languages or modify existing ones.
+4.  **Zero-Latency Logic**: Optimized command handling replacing complex decision trees with a lean, mapping-based approach.
+5.  **Clean & Maintainable**: Refactored according to NASA-inspired coding standards for maximum reliability.
 
 ## Requirements
 
@@ -59,11 +68,24 @@ Python 3.6+
        ```
    - This activates the virtual environment and should look like `(venv) directory/of/your/project>`
 
-4. **Install Requirements**
+### 4. Install Requirements
 
-   - Install all the requirements given in **[requirements.txt](https://github.com/kishanrajput23/Jarvis-Desktop-Voice-Assistant/blob/main/requirements.txt)** by running the command `pip install -r requirements.txt`
+- Install all the requirements given in **[requirements.txt](https://github.com/kishanrajput23/Jarvis-Desktop-Voice-Assistant/blob/main/requirements.txt)** by running the command `pip install -r requirements.txt`
 
-5. **Install PyAudio**  
+### 5. System Prerequisites (Linux Only)
+
+Before running Jarvis on Linux, you need to install some system dependencies:
+
+- **For Ubuntu/Debian:**
+  ```bash
+  sudo apt-get install -y python3-tk python3-dev scrot
+  ```
+- **For Fedora:**
+  ```bash
+  sudo dnf install -y python3-tkinter python3-devel scrot
+  ```
+
+### 6. Install PyAudio
    - Follow the instructions given **[here](https://stackoverflow.com/questions/52283840/i-cant-install-pyaudio-on-windows-how-to-solve-error-microsoft-visual-c-14)**
 
 6. **Run the Assistant**
